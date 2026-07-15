@@ -1,0 +1,18 @@
+# Core (v2 bandit/gridworld experiments) -- numpy only
+numpy>=1.21.0
+matplotlib>=3.5.0
+tqdm>=4.60.0
+
+# MDP testbeds (Hopper, topology): MuJoCo + SB3
+gymnasium==1.3.0
+mujoco==3.10.0
+stable-baselines3==2.9.0
+networkx==3.6.1
+
+# Real-grader RLVR Q5/Q6 panel (LLM graders)
+# NOTE: pin torch to the CUDA build matching the box driver; installing SB3/bnb can
+# pull a newer torch and break CUDA. On the reference box: torch==2.5.1+cu121.
+torch==2.5.1
+transformers==5.8.0
+datasets==4.8.5
+bitsandbytes==0.49.2

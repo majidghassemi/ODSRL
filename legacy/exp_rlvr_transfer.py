@@ -1,4 +1,11 @@
 """
+[RETIRED — SYNTHETIC] This is the synthetic Q5: the verifier is faked
+(`z = true_r + noise`), the evaluator bias is a hand-built matrix, and Delta_drift
+is a knob `(1-couple)*B`. It is kept for reference only; its figure has been retired
+from paper/figures/. The real Q5 is exp_rlvr_real.py (local LLM grader panel +
+GSM8K exact-match verifier + measured drift), with exp_rlvr_subjective.py for the
+subjective-N variant. Do not cite this figure as evidence.
+
 Q5 -- verifiable-subtask anchoring (RLVR), two-phase transfer.
 Pipeline: learn evaluator trust on the verifiable region V (dense, exact, free
 reference), FREEZE it, then deploy on the non-verifiable region N (no reference).

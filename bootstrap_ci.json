@@ -1,0 +1,90 @@
+{
+  "n_items": 100,
+  "bootstrap": 5000,
+  "q5_q6": {
+    "ESA (frozen V-trust)": {
+      "recovery": 0.8,
+      "ci95": [
+        0.72,
+        0.87
+      ]
+    },
+    "Mean": {
+      "recovery": 0.01,
+      "ci95": [
+        0.0,
+        0.03
+      ]
+    },
+    "Median": {
+      "recovery": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    "Dawid-Skene": {
+      "recovery": 0.01,
+      "ci95": [
+        0.0,
+        0.03
+      ]
+    },
+    "GAIL (mimic majority)": {
+      "recovery": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    "KL-DRO (KLDPO-analogue)": {
+      "recovery": 0.38,
+      "ci95": [
+        0.29,
+        0.48
+      ]
+    },
+    "Wass-DRO (WDPO-analogue)": {
+      "recovery": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    },
+    "RRM": {
+      "recovery": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "ordinal": {
+    "cardinal": {
+      "recovery": 0.8,
+      "ci95": [
+        0.72,
+        0.87
+      ]
+    },
+    "ordinal": {
+      "recovery": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "provenance": {
+    "git_commit": "eee4cfc",
+    "git_dirty": true,
+    "date_utc": "2026-07-15T17:35:35.288189+00:00",
+    "honest_model": "Qwen/Qwen2.5-32B-Instruct",
+    "syco_model": "Qwen/Qwen2.5-7B-Instruct",
+    "gold_model": "Qwen/Qwen2.5-32B-Instruct",
+    "temperature": 0.0,
+    "decoding": "greedy",
+    "n_n": 100,
+    "n_v": 120
+  }
+}

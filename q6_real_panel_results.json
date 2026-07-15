@@ -1,0 +1,26 @@
+{
+  "recovery": {
+    "Mean (Dogma-4)": 0.01,
+    "Median": 0.0,
+    "Dawid-Skene": 0.01,
+    "GAIL (mimic majority)": 0.0,
+    "KL-DRO (KLDPO-analogue)": 0.38,
+    "Wass-DRO (WDPO-analogue)": 0.0,
+    "RRM (robust reward)": 0.0,
+    "ESA (frozen V-trust, ours)": 0.8
+  },
+  "single_ratio": "8/10 fixed",
+  "caption": "Q6 aggregation baselines on the REAL grader panel (2 honest Qwen2.5-32B + 8 sycophant Qwen2.5-7B) over TruthfulQA. SINGLE FIXED RATIO (8/10); the tipping-point ratio sweep is exp_q6_ratio_sweep.py (also real graders). Every majority-trusting aggregator collapses to the sycophantic majority; ESA, auditing the source on the verifiable region, recovers.",
+  "kl_dro_note": "KL-DRO's partial 38% is not noise: entropic risk exp-tilts toward LOW scores, so it discounts the sycophant's lenient score inflation. It is exploiting the same CARDINAL channel ESA uses, just without a reference -- which is why it beats every other baseline and still fails. A corroborating data point for the cardinal-elicitation claim.",
+  "provenance": {
+    "git_commit": "eee4cfc",
+    "git_dirty": true,
+    "date_utc": "2026-07-15T17:30:43.788083+00:00",
+    "honest_model": "Qwen/Qwen2.5-32B-Instruct",
+    "syco_model": "Qwen/Qwen2.5-7B-Instruct",
+    "gold_model": "Qwen/Qwen2.5-32B-Instruct",
+    "temperature": 0.0,
+    "decoding": "greedy",
+    "n_n": 100
+  }
+}

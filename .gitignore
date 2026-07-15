@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+# Large, regenerable LLM score caches (see reproduce.sh / exp_rlvr_subjective.py to rebuild)
+rlvr_real_cache.json
+rlvr_subjective_cache.json
+rlvr_subjective_N*.json
+*.log
+scratchpad/

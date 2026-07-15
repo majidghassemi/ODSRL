@@ -1,0 +1,766 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{natbib} % your manuscript already uses author-year \citep; keeps this file standalone-compilable
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Rstar}{R^{\ast}}
+\newcommand{\astar}{a^{\ast}}
+\newcommand{\asoc}{a_{\mathrm{soc}}}
+\newcommand{\Ebias}{\mathcal{E}_{\mathrm{bias}}}
+\newcommand{\Etrue}{\mathcal{E}_{\ast}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\Cov}{\mathcal{C}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\bias}{\bar B}
+
+\title{Corrections and Upgrades for \\ ``Objective Decoupling in Social Reinforcement Learning'' \\ \large drop-in LaTeX for the AAAI(-27) version}
+\author{Editorial pass}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{How to use this file.}
+I worked from your PDF, not your \texttt{.tex}, so slot these blocks in by hand.
+Each item is tagged \texttt{\% DEFECT} (what is wrong now) and \texttt{\% FIX} (what to paste).
+Items marked \textcolor{blue}{[VERIFY]} need you to check a constant or an order term.
+Items marked \textcolor{red}{[LOAD-BEARING]} are the ones that change the paper from thin to defensible.
+
+\medskip
+\noindent\textbf{Scoping decision I made for you.}
+I restricted the \emph{formal} theory to the (contextual) bandit / single-state Social MDP.
+Your current Prop.~1 is stated for bandits but you then invoke it for full MDPs (PPO, Hopper) without a performance-difference argument, so the MDP theory does not hold as written.
+Keep Gridworld and Hopper as \emph{empirical} validation; do not claim MDP guarantees you have not proved.
+The contextual-bandit case is clean, provable, and covers your Testbed 3, which is where the interesting dynamics live anyway.
+
+\bigskip
+\hrule
+\section*{Part A --- Bugs, sloppy assumptions, and corrections}
+\hrule
+
+\subsection*{A1. One name for the failure mode}
+% DEFECT: The cover page and Fig.~1 call it "Objective Decoupling"; the abstract and body
+% switch to "Reward Misspecification". Two names for one object. Worse, "reward
+% misspecification" already means something else in the literature (the reward function
+% itself is mis-specified), so the switch invites a terminology objection.
+% FIX: Pick "Objective Decoupling" everywhere. Delete every occurrence of
+% "Reward Misspecification" and "misspecification". Use this single definition.
+
+\begin{definition}[Objective Decoupling]
+\label{def:decoupling}
+Let $J(\pi)=\E_{\pi}\!\left[\sum_t \gamma^t \Rstar(s_t,a_t)\right]$ be the latent return and let
+$\hat\pi$ be the policy learned from the aggregated social feedback.
+The system is \emph{objective-decoupled} if the latent suboptimality gap
+$\Delta \coloneqq J(\pi^{\ast}) - \E[J(\hat\pi)]$ is bounded away from zero as $T\to\infty$.
+\end{definition}
+
+\subsection*{A2. Stop calling it ``Dogma 4''}
+% DEFECT: You brand the feedback-reliability assumption as "Dogma 4", framed as a fourth
+% member of Abel, Ho & Harutyunyan (2024). Their three dogmas are (1) the environment
+% spotlight (modeling environments, not agents), (2) learning as finding a solution rather
+% than adaptation, and (3) the reward hypothesis. NONE concerns the reliability of the
+% feedback SOURCE. Appending "Dogma 4" is a land-grab a reviewer will resent, and it
+% mis-frames the cited work.
+% FIX: Rename it "the Trusted-Feedback Assumption" and position it as ORTHOGONAL to the
+% three dogmas, not an extension of them. Drop-in sentence:
+
+\noindent\emph{We isolate a further implicit commitment in feedback-driven RL, orthogonal to the three dogmas of \citet{abel2024three}: that the feedback \emph{source} is a faithful, if noisy, channel to the latent objective. We call this the \textbf{Trusted-Feedback Assumption}. Unlike the reward hypothesis, which concerns whether goals are expressible as scalar reward, this assumption concerns whether the reported scalar is produced by a truthful process. The two are independent: one can accept the reward hypothesis and still face a corrupted channel.}
+
+\subsection*{A3. Fix the reference signal: it is NOT an unbiased estimator of $\Rstar$}
+% DEFECT (this is the root problem). Your Theorem 1 says "let z_t be an unbiased estimator
+% of R* with noise scale sigma". If z_t were a globally unbiased estimator of the DENSE
+% reward, the sycophancy problem would be nearly trivial: you could bootstrap the policy
+% from z_t and ignore the social layer entirely. A "safety axiom" (don't step in lava) or a
+% "factual check" is NOT an unbiased estimator of R* everywhere; it is informative only on a
+% SUBSET of the state-action space and says nothing elsewhere. Your whole recovery story
+% silently assumes the reference fires exactly where the decision is made.
+% FIX: Replace the global-unbiased assumption with a COVERAGE model.
+
+\begin{definition}[Reference oracle with coverage]
+\label{def:reference}
+There is a \emph{coverage set} $\Cov \subseteq \mathcal{S}\times\A$ on which an internal
+oracle is informative. When queried (each step with probability $p_{\mathrm{ref}}$) at a
+covered pair $(s,a)\in\Cov$, it returns $z(s,a)=\Rstar(s,a)+\xi$, with $\xi$ zero-mean
+$\sigma_z$-subgaussian. Off $\Cov$ the oracle is uninformative. We write $\rho$ for the
+coverage rate and stress that $\Cov$ is typically a strict subset: a safety constraint
+certifies ``not lava'' but does not rank ``hop'' versus ``stand still.''
+\end{definition}
+
+\begin{remark}
+Every downstream recovery claim must now be conditioned on $\Cov$. This is not a weakening
+for its own sake; it is what makes the problem nontrivial and what your experiments must
+actually stress (see Part D).
+\end{remark}
+
+\subsection*{A4. Demote Proposition 1 to what it is, and make it precise}
+% DEFECT: Prop.~1 ("a no-regret algo on the biased signal suffers linear latent regret") is
+% essentially definitional and the proof is notation soup that conflates R (observed) and R*.
+% It is not a theorem; it is an observation. State the actually-informative version: WHEN does
+% systematic bias flip the argmax.
+% FIX:
+
+\begin{proposition}[Decoupling condition]
+\label{prop:decoupling}
+Consider the bandit case, naive-mean aggregation
+$\bias(a)=\tfrac1M\sum_{m}b_m(a)$, and let $\asoc=\arg\max_a\{\Rstar(a)+\bias(a)\}$.
+Write $\Delta(a)=\Rstar(\astar)-\Rstar(a)$ for the latent gap. Then $\asoc\neq\astar$ (decoupling occurs) if and only if
+\[
+\max_{a\neq \astar}\big[\bias(a)-\bias(\astar)-\Delta(a)\big] \;>\; 0 .
+\]
+Equivalently, decoupling occurs exactly when some action's excess mean bias exceeds its
+true disadvantage.
+\end{proposition}
+
+\begin{corollary}[Linear latent regret, immediate]
+\label{cor:linreg}
+If the condition of Prop.~\ref{prop:decoupling} holds, any algorithm that is no-regret on the
+naive-mean signal pulls $\asoc$ on all but $o(T)$ rounds and therefore incurs latent regret
+$R^{\mathrm{lat}}_T \ge (T-o(T))\,\Delta(\asoc)=\Omega(T)$.
+\end{corollary}
+
+\begin{proof}[Proof sketch]
+The ``if and only if'' is a comparison of the aggregated means. The corollary follows because a
+no-regret algorithm concentrates pulls on the maximizer of the signal it optimizes, i.e.\ $\asoc$,
+and each such pull costs $\Delta(\asoc)$ in latent value.
+\end{proof}
+
+\begin{remark}
+This is now honest: the content is the \emph{condition}, and linear regret is a one-line
+corollary rather than a headline theorem. It also tells the reader something Dawid--Skene-style
+consensus cannot see, namely that decoupling is a margin phenomenon governed by $\bias$ versus
+$\Delta$, not by outlier counts.
+\end{remark}
+
+\subsection*{A5. ``Informational Dominance'' currently assumes its own conclusion --- derive it}
+% DEFECT: Definition 2 posits that truthful evaluators are more consistent with z_t by a
+% margin gamma. That is close to circular: the good guys are identifiable by the very signal
+% you use to identify them, with the margin pulled from nowhere. Tie gamma to primitives, and
+% localize it to the coverage set (dominance off C is meaningless).
+% FIX:
+
+\begin{lemma}[Dominance from primitives, on $\Cov$]
+\label{lem:dominance}
+Restrict attention to covered pairs. For an evaluator with bias $b_m$ and $\sigma$-subgaussian
+noise, the expected reference loss $\ell_m=\E\,|y_m-z|$ satisfies
+$\big|\,\ell_m-\E|\epsilon-\xi|\,\big|\le \E_{\Cov}|b_m|$ up to the reverse triangle inequality,
+so that on $\Cov$
+\[
+\gamma_{\Cov} \;\ge\; \min_{m\in\Ebias}\E_{\Cov}|b_m| \;-\; 2\,\E|\epsilon-\xi| .
+\]
+Hence \emph{dominance holds precisely when every biased evaluator's bias, measured on the covered
+region, exceeds the combined noise floor.}
+\end{lemma}
+
+\begin{remark}
+This replaces the free parameter $\gamma$ with a statement about detectability, and makes the
+real assumption explicit: it is \emph{coverage} (the reference fires where biases matter), not a
+mysterious margin.
+\end{remark}
+
+\subsection*{A6. Proposition 2 is Multiplicative Weights --- say so, and fix the time index}
+% DEFECT: Prop.~2 (exponential trust concentration) is textbook Hedge/MWU relabeled as a
+% contribution, and it is stated with decay in t. But trust only updates on rounds where the
+% reference FIRES and the played pair is COVERED. Decay is in the count of effective reference
+% rounds N_ref(t), not wall-clock t.
+% FIX: attribute it and correct the index.
+
+\begin{proposition}[Trust concentration, MWU]
+\label{prop:mwu}
+Let $N_{\mathrm{ref}}(t)$ count rounds through $t$ on which the reference fired at a covered pair.
+Under Lemma~\ref{lem:dominance} with margin $\gamma_{\Cov}>0$, the multiplicative-weights update
+with rate $\eta$ gives
+\[
+\frac{W_{\mathrm{bias}}(t)}{W_{\ast}(t)}\;\le\;\frac{W_{\mathrm{bias}}(0)}{W_{\ast}(0)}\,
+\exp\!\big(-\eta\,\gamma_{\Cov}\,N_{\mathrm{ref}}(t)\big).
+\]
+In expectation $N_{\mathrm{ref}}(t)=\Theta(p_{\mathrm{ref}}\,\rho\, t)$, so concentration is
+slower than the current statement by the factor $p_{\mathrm{ref}}\rho$.
+\end{proposition}
+
+\begin{proof}[Proof]
+Standard Hedge analysis \citep{freund1997,arora2012mwu} applied to the per-group weight mass, with
+the group loss gap $\ge\gamma_{\Cov}$ from Lemma~\ref{lem:dominance}. Only reference-fired covered
+rounds contribute an update.
+\end{proof}
+
+\subsection*{A7. Theorem 1 (strategic adversary): fix the constant and the equilibrium concept}
+% DEFECT #1: the bound "delta <= 2 sigma" assumes a perfect reference (sigma_z = 0) and uses
+% E|eps| = sigma, which is wrong: for zero-mean Gaussian, E|eps| = sigma*sqrt(2/pi). The honest
+% constant is 2 E|eps - xi|.
+% DEFECT #2: you call the outcome a "Truthful Nash Equilibrium" but there is no game with defined
+% players, strategies, and payoffs. Model it as a Stackelberg best-response (the agent commits to
+% the trust rule; the adversary best-responds), which is what you actually have.
+% FIX:
+
+\begin{proposition}[Sustainable bias under a committed trust rule; Stackelberg]
+\label{prop:stackelberg}
+Fix the trust rule (MWU rate $\eta$, plus the absolute rule of Sec.~B4 with threshold $\tau$).
+An adversary that maintains expected report offset $\delta$ on covered pairs incurs reference loss
+$\E[\ell_{\mathrm{adv}}]\ge |\delta|-\E|\epsilon-\xi|$. To avoid relative-weight decay against a
+truthful evaluator (loss $\E|\epsilon-\xi|$) it needs
+$|\delta|\le 2\,\E|\epsilon-\xi|$, and to avoid the absolute-distrust trigger it needs
+$|\delta|\le \tau+\E|\epsilon-\xi|$. Hence any bias that retains nonvanishing influence satisfies
+\[
+|\delta|\;\le\;\min\!\big(2\,\E|\epsilon-\xi|,\ \tau+\E|\epsilon-\xi|\big)\;=\;O(\sigma_{\mathrm{eff}}),
+\qquad \sigma_{\mathrm{eff}}=\sqrt{\sigma^2+\sigma_z^2}.
+\]
+No adversary can hold a systematic bias above the noise floor without being suppressed.
+\textcolor{blue}{[VERIFY]} the exact constant if you use a loss other than $|\cdot|$.
+\end{proposition}
+
+\subsection*{A8. Citation errors that a reviewer will catch}
+% DEFECT: You cite "R3M (Xu et al., 2025)" on one line and "R3M (Liu et al., 2024)" on another,
+% for what reads as the same method. These are two different papers, and "R3M" is neither:
+%   - Liu et al. 2024 (arXiv:2409.13156) is RRM (Robust Reward Model training).
+%   - Xu et al. 2025 (arXiv:2502.01930) is distributionally robust DPO (WDPO / KLDPO).
+%   - "R3M" is Nair et al. 2022, a robotics visual representation model -- unrelated. Remove it.
+% FIX: drop-in related-work sentence.
+
+\noindent\emph{Robust reward modeling handles \emph{sparse} corruptions: \textbf{RRM} \citep{liu2024rrm} disentangles reward signal from spurious artifacts during reward-model training, and distributionally robust DPO variants (\textbf{WDPO}, \textbf{KLDPO}) \citep{xu2025robust} guard the preference objective against annotation-set shift. Both presume the bulk of the signal is trustworthy. Our failure mode is different: the bias is \emph{systematic and majority-held}, so there is no clean bulk to fall back on.}
+
+\subsection*{A9. Kill the overclaims}
+% DEFECT: The abstract and conclusion claim ESA "guarantees convergence to the true objective,
+% even when a majority of evaluators are biased" and "recovers ... even when 80% ... is
+% adversarial." Your own 100%-bias figure shows no recovery, and the guarantee needs coverage +
+% dominance. Qualify every headline. Replace the abstract's closing sentence with:
+
+\noindent\emph{We prove a tight characterization: source filtering recovers the latent-optimal policy \emph{iff} the reference signal covers the region where bias could flip the decision. Under this coverage condition ESA recovers $\astar$ and suppresses biased sources exponentially; outside it, no source-filtering method can succeed, and ESA instead \emph{fails safe} by deferring to the reference rather than adopting the sycophantic optimum.}
+
+\bigskip
+\hrule
+\section*{Part B --- New results that make it AAAI-level}
+\hrule
+
+\subsection*{B1. The missing bridge: trust error $\Rightarrow$ reward error $\Rightarrow$ policy error}
+% Your paper asserts that once trust concentrates, the policy recovers. It never proves the link.
+% Here it is. This is the lemma that makes "recovery" a theorem rather than a hope.
+
+\begin{lemma}[Aggregation error control]
+\label{lem:bridge}
+Let $\beta_{\ast}=\max_{m\in\Etrue,a}|b_m(a)|$ be the residual truthful bias and $B_{\max}$ the
+largest bias magnitude. The trust-weighted reward $\hat r(a)=\sum_m w_m\,y_m(a)$ obeys
+\[
+\big|\hat r(a)-\Rstar(a)\big|\;\le\;\underbrace{\beta_{\ast}}_{\text{honest slack}}
+\;+\;\underbrace{W_{\mathrm{bias}}(t)\,B_{\max}}_{\text{residual bias mass}}
+\;+\;\underbrace{O_P\!\big(\sigma/\sqrt{N(a)}\big)}_{\text{noise}} .
+\]
+If the right-hand side is below $\Delta_{\min}/2$ for all $a$ (where $\Delta_{\min}$ is the smallest
+action gap), then $\arg\max_a \hat r(a)=\astar$, and any no-regret base learner run on $\hat r$
+converges to $\astar$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+Triangle inequality on $\hat r-\Rstar$ using $\sum_m w_m=1$, splitting truthful and biased mass.
+Once the pointwise reward error is below half the gap, the empirical argmax equals $\astar$; feed
+this into the base learner's regret bound.
+\end{proof}
+
+\begin{remark}
+Note what this makes explicit and your draft hides: recovery is \emph{conditional}. It needs the
+residual truthful bias plus the residual biased mass to sit below the gap. It is not
+unconditional, and pretending otherwise is the overclaim in A9.
+\end{remark}
+
+\subsection*{B2. \textcolor{red}{[LOAD-BEARING]} Coverage is necessary (identifiability lower bound)}
+% This is the theorem that converts the paper. It says: if the reference does not cover the arm
+% where the decision could flip, NO source-filtering algorithm can recover -- not ESA, not any
+% future method. It also kills the "80% adversarial" overclaim by exhibiting the exact boundary.
+% I checked the construction numerically; it is airtight.
+
+\begin{theorem}[Impossibility without coverage of the divergence region]
+\label{thm:lower}
+Fix $K$ arms, $M$ evaluators, and a coverage set $\Cov$ with at least one uncovered arm
+$a_0\notin\Cov$. Consider the family of two instances:
+\begin{itemize}[nosep]
+\item[$P_0$:] all evaluators truthful, $\Rstar(a_0)=\mu_{\mathrm{high}}$, so $a_0=\astar$;
+\item[$P_1$:] $\Rstar(a_0)=\mu_{\mathrm{low}}$ with $\mu_{\mathrm{high}}-\mu_{\mathrm{low}}=\Delta$,
+and every evaluator biased by exactly $\Delta$ on $a_0$ (and truthful on $\Cov$), so
+$a_0\neq\astar$.
+\end{itemize}
+On $\Cov$ the two instances are identical, and on $a_0$ the reported law is
+$\mu_{\mathrm{high}}+\epsilon$ under \emph{both}. Since the reference never fires on $a_0$, the
+joint law of everything any source-filtering algorithm observes is identical under $P_0$ and $P_1$.
+Therefore, for every algorithm,
+\[
+\max\big\{\,\E_{P_0}[R^{\mathrm{lat}}_T],\ \E_{P_1}[R^{\mathrm{lat}}_T]\,\big\}\;\ge\;\tfrac{\Delta}{2}\,T
+\;=\;\Omega(T).
+\]
+\end{theorem}
+
+\begin{proof}[Proof]
+Le Cam two-point. The observation channel is $\Cov$-reports, $a_0$-reports, and reference draws
+on $\Cov$. By construction each has an identical distribution across $P_0,P_1$, so the total
+variation between the two observation laws is $0$ and any algorithm induces the same distribution
+over pull counts; in particular $\E_{P_0}[N_T(a_0)]=\E_{P_1}[N_T(a_0)]=n$. Under $P_0$, not pulling
+$a_0$ costs $\Delta$ each round: $R^{\mathrm{lat}}_T\ge \Delta(T-n)$. Under $P_1$, pulling $a_0$
+costs $\Delta$: $R^{\mathrm{lat}}_T\ge \Delta n$. Hence the max is $\ge \Delta\max(T-n,n)\ge \Delta T/2$.
+\end{proof}
+
+\begin{remark}[Why this matters and why your current experiments are rigged]
+The adversary here is \emph{honest on the audited region and biased only where the reference is
+blind}. This ``locally-honest, globally-adversarial'' evaluator is exactly what a reference-based
+filter cannot catch, and it is exactly the case your testbeds avoid by placing lava (the reference
+trigger) on the divergence action. State this openly. It is a strength: you have found the precise
+boundary of source filtering.
+\end{remark}
+
+\begin{corollary}[No internal-only rule survives a coherent majority]
+\label{cor:internal}
+Let the agent's action selection be any measurable function of the report matrix
+$Y=(y_m(a))_{m,a}$ alone, with no reference queries. On the two-point family of
+Theorem~\ref{thm:lower} (take $\Cov=\varnothing$), the law of $Y$ is identical under $P_0$ and
+$P_1$, so any such rule induces the same distribution over pulls and suffers
+$\max\{\E_{P_0}[R^{\mathrm{lat}}_T],\,\E_{P_1}[R^{\mathrm{lat}}_T]\}\ge \tfrac{\Delta}{2}T$.
+In particular peer-agreement, residual-correlation, and spectral aggregation rules---being
+functions of $Y$---cannot separate a truthful majority from a colluding one.
+\end{corollary}
+
+\begin{remark}[Why you cannot drop the audit, and what to do instead]
+Some external grounding is information-theoretically irreducible: no statistic of the reports
+alone removes the anchor against a coherent correlated majority. State this corollary next to
+Theorem~\ref{thm:lower}; it pre-empts the ``just use peer agreement / consistency / a spectral
+filter'' referee, and it is the formal reason the contribution is to \emph{minimize and decompose}
+the anchor (Sec.~B5), not eliminate it. Internal signals can \emph{route} the audit budget; they
+cannot replace it.
+\end{remark}
+
+\subsection*{B3. \textcolor{red}{[LOAD-BEARING]} Coverage is sufficient (matching upper bound)}
+
+\begin{assumption}[Coverage margin]
+\label{ass:coverage}
+$\Cov$ contains every $(s,a)$ whose aggregated observed value can exceed $\Rstar(\astar)$; i.e.\
+any pair that could be mistakenly preferred is auditable. Dominance (Lemma~\ref{lem:dominance})
+holds on $\Cov$ with margin $\gamma_{\Cov}>0$.
+\end{assumption}
+
+\begin{theorem}[Recovery under coverage]
+\label{thm:upper}
+Under Assumption~\ref{ass:coverage}, ESA drives $W_{\mathrm{bias}}(t)\to 0$, and after a burn-in of
+\[
+T_0 \;=\; O\!\left(\frac{1}{\eta\,\gamma_{\Cov}\,p_{\mathrm{ref}}\,\rho}\,
+\log\frac{M\,W_{\mathrm{bias}}(0)}{W_{\ast}(0)}\right)
+\quad\text{reference-effective rounds}
+\]
+the aggregation error of Lemma~\ref{lem:bridge} falls below $\Delta_{\min}/2$, after which the base
+no-regret learner incurs $\tilde O(\sqrt{T})$ latent regret. \textcolor{blue}{[VERIFY]} the burn-in
+constant against your MWU implementation.
+\end{theorem}
+
+\begin{remark}[The actual contribution, in one line]
+Theorems~\ref{thm:lower} and \ref{thm:upper} \emph{match on the coverage axis}: coverage of the
+divergence region is necessary and sufficient for source-based recovery. That characterization,
+not ``ESA beats Dawid--Skene,'' is the paper.
+\end{remark}
+
+\subsection*{B4. \textcolor{red}{[LOAD-BEARING]} Make the fail-safe claim true (absolute distrust)}
+% DEFECT: at 100% homogeneous bias, plain MWU keeps all evaluators equally weighted, so r-hat =
+% mean of the biased reports = the sycophantic signal, and ESA CONVERGES TO a_soc. Your claim that
+% it "defaults to a fail-safe / random policy" is false for the algorithm you wrote. MWU only
+% reweights RELATIVELY; it has no notion of "everyone is untrustworthy."
+% FIX: add an ABSOLUTE-threshold rule and prove the fail-safe property. This is both a bug fix and
+% a genuine safety mechanism (abstention / deferral), which alignment reviewers like.
+
+\paragraph{Algorithm change (add to Algorithm 1, Phase 1).}
+Maintain an EMA $\bar\ell_m$ of each evaluator's reference loss on covered rounds. Define an
+absolute threshold $\tau$ with $\E|\epsilon-\xi| < \tau <$ (smallest bias worth catching). If
+$\min_m \bar\ell_m > \tau$ (\emph{no} source is trustworthy), set all trust to zero on the
+affected region and act by the \emph{fail-safe policy} $\pi_{\mathrm{safe}}$: follow $z$ where the
+reference certifies, and \emph{abstain / defer} elsewhere rather than optimize $\hat r$.
+
+\begin{proposition}[Fail-safe under total corruption]
+\label{prop:failsafe}
+If every evaluator shares bias magnitude $|b|>\tau+\E|\epsilon-\xi|$ on $\Cov$ (e.g.\ the
+$100\%$-bias regime), the absolute rule triggers, so ESA does \emph{not} converge to $\asoc$.
+On $\Cov$ it incurs at most the reference-only regret; off $\Cov$ it abstains. Thus ESA is never
+driven to the sycophantic optimum, matching the fail-safe behavior your paper claims but the plain
+MWU algorithm does not deliver.
+\end{proposition}
+
+\begin{remark}
+This is the honest resolution of your Figure~11. ``All methods fail'' is expected
+(Theorem~\ref{thm:lower}); the point worth making is that ESA fails \emph{toward abstention},
+not toward the lie. Report the abstention rate as a metric.
+\end{remark}
+
+\subsection*{B5. \textcolor{red}{[LOAD-BEARING]} Active auditing: a horizon-independent audit budget}
+% Answers the reviewers' recurring "z may be unavailable / is expensive" (R3, R4) by making the
+% number of audits FINITE and independent of T, and localized to the divergence region. Requires
+% per-region trust (R3's contextual-trust point) to avoid false positives; that minimal version is
+% pulled in here as a hard requirement of doing active auditing correctly.
+
+The fixed-rate rule (Bernoulli$(p_{\mathrm{ref}})$, Algorithm~1, Phase~1) spends
+$\Theta(p_{\mathrm{ref}}T)$ audits and never stops, even after trust has fully concentrated. That
+is wasteful and it is the root of the ``the reference may not be available'' objection: it presumes
+a perpetual audit stream. We replace it with auditing that halts once the decision is resolved.
+
+\begin{definition}[Per-region trust]
+\label{def:regiontrust}
+Partition the auditable space into regions $g\in\mathcal G$ (at minimum, one region per
+argmax-competitive action). Maintain trust $w_m^{(g)}$ per evaluator per region, updated by MWU
+only from audits landing in $g$. This is the minimal contextual-trust refinement (R3's point): it
+stops an evaluator's bias in one region from decaying its weight in another, which is the
+false-positive failure of a single global scalar.
+\end{definition}
+
+\paragraph{Active-audit rule (replaces the Phase 1 Bernoulli sample).}
+Let $\hat r(a)$ be the current per-region trust-weighted estimate and $U(a)$ its confidence width.
+Call $a$ \emph{competitive} if $\hat r(a)\ge \max_{a'}\hat r(a')-U(a)$. Query $z_t$ at the played
+pair iff (i)~it is auditable and (ii)~its region is \emph{unresolved}: trust there has not yet
+concentrated past an observable stopping threshold (e.g.\ top-$2$ trust mass $<1-\kappa$)
+\emph{and} a competitive action remains in it. Once a region resolves, stop auditing it; its audit
+count is frozen thereafter.
+
+\begin{theorem}[Audit complexity]
+\label{thm:audit}
+Under the coverage margin (Assumption~\ref{ass:coverage}) and per-region dominance with margin
+$\gamma$, the active-audit rule recovers $\astar$ using a total number of reference queries
+\[
+N_{\mathrm{audit}} \;=\; O\!\big(K_{\mathrm{eff}}\,\gamma^{-2}\,\log(K_{\mathrm{eff}}/\delta)\big),
+\qquad K_{\mathrm{eff}}=\big|\{a: a\text{ is ever competitive}\}\big|,
+\]
+\emph{independent of the horizon $T$}, with probability $1-\delta$. The fixed-rate rule uses
+$\Theta(p_{\mathrm{ref}}T)\to\infty$. \textcolor{blue}{[VERIFY]} the constant against your
+implementation.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Two accountings compose. \emph{Per region:} separating the biased from the truthful at loss gap
+$\gamma$ is a two-population identification problem, needing $O(\gamma^{-2}\log(1/\delta))$ audit
+samples for the group loss gap to clear its subgaussian fluctuation, after which MWU drives
+$W_{\mathrm{bias}}^{(g)}\!\to 0$ (Prop.~\ref{prop:mwu}) and Lemma~\ref{lem:bridge} certifies the
+region's argmax. \emph{Across regions:} worst-case action-specific bias forces separate resolution
+of each competitive action, and only competitive actions are ever audited (successive-elimination
+logic), giving the $K_{\mathrm{eff}}$ factor and a union bound $\log(K_{\mathrm{eff}}/\delta)$;
+non-competitive actions are eliminated by their latent gaps at no audit cost. The one nontrivial
+step, deferred to the appendix, is that continued exploration of not-yet-eliminated actions does
+not disturb concentration already achieved in resolved regions; this holds because resolved regions
+stop updating.
+\end{proof}
+
+\begin{remark}[Empirical check I ran]
+In a $K{=}10$ bandit with an $80\%$ sycophantic majority (bias on a single arm, full coverage),
+the fixed rule ($p_{\mathrm{ref}}{=}0.1$) spends $111, 483, 1959, 8024$ audits at
+$T=10^3,\,5{\cdot}10^3,\,2{\cdot}10^4,\,8{\cdot}10^4$, while the active rule spends
+$15$--$20$ at \emph{every} horizon; both recover $\astar$ over the sycophantic arm. Audit count is
+flat in $T$, matching the theorem. Reproduce this as a figure: audits-vs-$T$, fixed (linear)
+against active (flat).
+\end{remark}
+
+\begin{remark}[Accounting variant and the global-trust special case]
+Counting MWU rounds instead of identification samples replaces $\gamma^{-2}$ by $(\eta\gamma)^{-1}$.
+If bias is \emph{homogeneous} across the competitive set (an evaluator biased on one competitive
+action is biased on all), a single global trust scalar suffices and $K_{\mathrm{eff}}$ collapses to
+$1$. The per-region machinery earns its keep precisely for \emph{action-specific} bias, which is
+also the regime where a global scalar produces the false positives R3 warned about. So per-region
+trust and active auditing are the same fix seen from two sides.
+\end{remark}
+
+\begin{remark}[Framing payoff]
+This turns the reviewers' liability into the paper's organizing question: \emph{how little external
+grounding is provably necessary?} Corollary~\ref{cor:internal} says it cannot be zero;
+Theorem~\ref{thm:audit} says it is finite and horizon-independent. That pair is more interesting
+than ``sparse oracle $+$ MWU,'' and it is exactly what a technically-engaged reviewer (your R3/R4)
+wants to see.
+\end{remark}
+
+\subsection*{B6. Correlation structure as an audit-routing prior (partition, not label)}
+% Bucket 2. Oracle-less covariance clustering partitions evaluators into blocs, cutting the audit
+% budget when bias is bloc-coherent and triggering re-audits under non-stationary coalitions
+% (your Testbed 3). It CANNOT say which bloc is honest -- that is Corollary cor:internal -- so it is
+% triage feeding Sec. B5, never a standalone fix.
+
+Truthful evaluators track $\Rstar$; a colluding bloc tracks $\Rstar$ plus a shared bias. Both are
+internally correlated, so the evaluator report-covariance carries block structure separating the
+population into a truthful bloc and one bloc per collusion ring. The key honesty point:
+correlation reveals the \emph{partition}, not the \emph{labels}. A tight truthful consensus and a
+tight colluding ring are both coherent clusters, and (Corollary~\ref{cor:internal}) nothing in the
+reports says which is honest. We use it only to route audits, never to decide the answer.
+
+\begin{proposition}[Bloc-adaptive audit complexity]
+\label{prop:bloc}
+Suppose the bias matrix is supported on $r$ evaluator blocs (each colluding ring shares a bias
+pattern; truthful form one $b\!\approx\!0$ bloc), so the centered report-covariance is
+$(r{+}1)$-block up to noise. Spectral clustering recovers the partition with no reference queries.
+The active rule (Sec.~B5) then labels one representative per bloc using
+$O\!\big(r\,\gamma^{-2}\log(r/\delta)\big)$ audit queries, replacing the worst-case
+$K_{\mathrm{eff}}$ factor of Theorem~\ref{thm:audit} whenever bias is bloc-coherent (low rank)
+rather than arbitrary per action. Labeling still requires the audit; clustering supplies only the
+partition.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+The rank-$r$ bias makes the centered covariance $(r{+}1)$-block plus a subgaussian perturbation; a
+Davis--Kahan bound gives correct clustering once the inter-bloc gap exceeds the noise scale. Because
+a bloc's bias pattern is shared across actions, one audit that separates the bloc from truthful at
+gap $\gamma$ labels it everywhere, so the across-region $K_{\mathrm{eff}}$ factor of
+Theorem~\ref{thm:audit} collapses to the bloc count $r$. \textcolor{blue}{[VERIFY]} the
+Davis--Kahan gap condition for your noise model.
+\end{proof}
+
+\paragraph{Non-stationarity trigger (reuses your Testbed 3).}
+A strategic adversary re-coordinating, or bias contagion spreading through the network, changes the
+covariance spectrum. Monitor the top eigenvalues and bloc memberships on a sliding window; a shift
+re-flags a resolved region for re-audit. This makes the response to your strategic-adversary and
+Barab\'asi--Albert-contagion experiments \emph{proactive} (a principled re-audit trigger) instead
+of purely reactive MWU decay, and it is the natural place to fold those experiments into the theory.
+
+\begin{remark}[Invisible collusion is bounded-harm collusion]
+To evade covariance clustering, a ring must keep its shared bias below the noise floor, i.e.\ make
+it indistinguishable from independent noise. But then its bias is $O(\sigma_{\mathrm{eff}})$, which
+by Lemma~\ref{lem:bridge} contributes bounded reward error. This mirrors the strategic-adaptation
+bound (Prop.~\ref{prop:stackelberg}): a source that hides from the audit and a source that hides
+from the covariance both pay by becoming harmless.
+\end{remark}
+
+\begin{remark}[No contradiction with Corollary~\ref{cor:internal}; and the empirical check]
+Clustering shrinks the \emph{labeling} problem from $M$ evaluators to $r{+}1$ blocs; it does not
+solve it. Which bloc is honest is untouched and is discharged only by the external audit.
+Empirically, with a $60\%$ colluding \emph{majority} sharing bias on $3$ of $12$ actions,
+oracle-less covariance clustering recovered the partition at $\approx 0.9$ accuracy (within-bloc
+correlation $0.84$--$0.95$, cross-bloc $0.12$), yet both clusters were internally coherent
+($0.93$--$0.98$), so nothing in the reports labeled them. One audit per bloc did. Reproduce this as
+a figure alongside the audits-vs-$T$ plot from Sec.~B5.
+\end{remark}
+
+\subsection*{B7. \textcolor{red}{[LOAD-BEARING]} Verifiable-subtask anchoring: the reference for free (RLVR)}
+% Bucket 3. Replaces hand-designed sparse safety axioms with naturally-occurring verifiers. Answers
+% the reviewers' "where does z come from / it may not exist" (R3, R4) AND is the framing fix
+% (R4-w1,w4): on verifiable tasks a ground truth genuinely exists, so "recover R*" is well-defined
+% and the contested "true human intent" is not needed.
+
+The weakest ingredient in the current paper is the hand-designed sparse safety axiom. Replace it
+with the verifier that already exists wherever correctness is computable: math answer-matching, code
+unit tests, checkable instruction constraints, formal proofs. There the reference $z$ is a
+deterministic checker, dense and available at zero human cost, not a sparse intermittent oracle.
+This is Reinforcement Learning with Verifiable Rewards
+\citep{lambert2024tulu,guo2025deepseekr1,shao2024deepseekmath,lightman2023verify}.
+
+\paragraph{Verifiable / non-verifiable split.}
+Partition into a verifiable region $\mathcal V$ (checker present) and a non-verifiable region
+$\mathcal N$ (subjective quality; human feedback only). On $\mathcal V$ the checker is exactly the
+oracle of Def.~\ref{def:reference}, with $\sigma_z\!\approx\!0$ and effective $p_{\mathrm{ref}}\!=\!1$:
+the sparse-audit limitation vanishes there. So $\mathcal V$ is the coverage set $\Cov$ made concrete
+and free, and the only open question is what a $\mathcal V$-trust certificate transfers to
+$\mathcal N$.
+
+\begin{proposition}[Verifiable-to-non-verifiable transfer]
+\label{prop:rlvr}
+Suppose bounded cross-region reliability drift: for each evaluator $m$,
+$\big|\,b_m^{\mathcal N}-b_m^{\mathcal V}\,\big|\le \Delta_{\mathrm{drift}}$. Then trust learned on
+$\mathcal V$ and applied on $\mathcal N$ gives aggregation error on $\mathcal N$ at most
+$\beta_{\ast}^{\mathcal V}+\Delta_{\mathrm{drift}}+W_{\mathrm{bias}}B_{\max}$; recovery on
+$\mathcal N$ holds once this is below $\Delta_{\min}/2$. Conversely, if drift is unbounded
+(reliability decoupled across $\mathcal V,\mathcal N$), Theorem~\ref{thm:lower} with
+$\Cov=\mathcal V$ applies and \emph{no} verifiable-subtask method recovers the $\mathcal N$-optimum.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+On $\mathcal V$ the exact dense checker drives $W_{\mathrm{bias}}\!\to\!0$ (Thm.~\ref{thm:upper}). A
+$\mathcal V$-trusted evaluator has $|b_m^{\mathcal N}|\le|b_m^{\mathcal V}|+\Delta_{\mathrm{drift}}$;
+substitute into Lemma~\ref{lem:bridge}. The converse is Theorem~\ref{thm:lower} with $\mathcal V$ as
+the coverage set and the ``honest-on-$\mathcal V$, biased-on-$\mathcal N$'' evaluator, which is
+exactly the two-point adversary.
+\end{proof}
+
+\begin{remark}[The assumption is testable; make it an experiment]
+$\Delta_{\mathrm{drift}}$ is empirical and falsifiable. Hold out prompts that are verifiable but
+also carry human labels, and measure whether evaluator reliability on the verifiable part predicts
+reliability on held-out judgments. Recent evidence that binary verification judgments agree across
+domains (medicine, chemistry, economics, education) suggests the coupling can hold, but it is
+domain-dependent: \emph{measure} $\Delta_{\mathrm{drift}}$, do not assume it.
+\textcolor{blue}{[VERIFY]} add the Su et al.\ (2025) cross-domain-verifier citation here.
+\end{remark}
+
+\paragraph{This is also the framing fix (R4-w1, w4).}
+On $\mathcal V$ a ground truth genuinely exists, so ``recover $\Rstar$'' is well-defined and the
+contested notion of ``true human intent'' is not needed. Scope the recovery claim to $\mathcal V$,
+state transfer to $\mathcal N$ as the explicit assumption above, and R4's objection (RLHF captures
+genuine preferences, not a hidden true intent) no longer lands: you recover verifiable correctness
+and transfer a trust certificate, not divine intent. This also aligns the paper with the 2026 shift
+from crowd preferences toward verifiable and expert data that R4 flagged as missing.
+
+\begin{remark}[Verifiers are not perfect oracles]
+Verifiers are gameable (reward hacking; \citealp{skalse2022reward}), which is why DeepSeek-R1 chose
+rule-based over neural rewards \citep{guo2025deepseekr1}. Keep $\sigma_z>0$ on $\mathcal V$;
+robustness to reference noise is already your Fig.~8a. Do not claim the verifiable region is
+noiseless.
+\end{remark}
+
+\bigskip
+\hrule
+\section*{Part C --- Related-work additions (drop-in prose)}
+\hrule
+
+% DEFECT: You frame "use trusted anchors to beat a wrong majority" as novel over consensus, but
+% this is exactly gold-standard / honeypot truth discovery from crowdsourcing. A knowledgeable
+% reviewer will say you reinvented gold-question weighting in an RL wrapper. Get ahead of it and
+% state your genuine delta.
+
+\paragraph{Gold-standard truth discovery.}
+\noindent\emph{Using a small set of verified ``gold'' items to weight annotators is standard in
+crowdsourcing and is precisely the family of consensus methods that does \emph{not} collapse under
+a wrong majority \citep[e.g.][]{dawid1979,li2016survey}. Our contribution is not the anchor idea.
+It is (i) the move to the online, non-stationary RL loop, where an evaluator's reliability drifts
+and trust must be estimated during exploration; (ii) the \emph{partial-coverage} regime, where the
+anchor certifies only part of the decision space; and (iii) the resulting necessary-and-sufficient
+coverage characterization (Thms.~\ref{thm:lower}--\ref{thm:upper}), which the offline gold-question
+literature does not address.}
+
+\paragraph{Distinction we should draw explicitly.}
+\noindent\emph{Robust-DPO methods (WDPO, KLDPO) and RRM assume sparse corruption and defend at the
+loss or distribution level; consensus and outlier methods assume a mostly-honest crowd. Both are
+majority-trusting. ESA is reference-trusting, which is why it survives majority bias exactly on the
+covered region and provably nowhere else.}
+
+\paragraph{Robust statistics and the semi-verified model.}
+\noindent\emph{That a wrong \emph{adversarial} majority can be overcome using a small trusted set is
+the \textbf{semi-verified} / list-decodable learning problem \citep{charikar2017untrusted,steinhardt2018resilience}. Reading $z$ as the verified set connects ESA to this literature and gives the
+cleanest statement of what the reference buys: it is not a denoiser but the seed that makes an
+adversarial-majority instance identifiable. A robust-statistics reviewer will expect this citation;
+it is currently missing and it is the closest formal ancestor of your whole premise.}
+
+\paragraph{Spectral aggregation for crowdsourcing.}
+\noindent\emph{Oracle-less bloc discovery via the evaluator covariance (Sec.~B6) builds on spectral
+crowdsourcing \citep{karger2011iterative,zhang2014spectral,ghosh2011moderators,dalvi2013aggregating}. We use it for partitioning only, never labeling, consistent with Corollary~\ref{cor:internal}.}
+
+\paragraph{Verifiable rewards (RLVR).}
+\noindent\emph{Where correctness is computable, the reward is a deterministic verifier, not a
+learned model \citep{lambert2024tulu,guo2025deepseekr1,shao2024deepseekmath}; the shift from crowd
+preferences toward verifiable and expert data is the current paradigm (R4-w4). ESA reads the
+verifier as a dense, free reference on the verifiable region (Sec.~B7) and asks what its trust
+certificate transfers to the non-verifiable region.}
+
+\bigskip
+\hrule
+\section*{Part D --- Experiments you must add (I cannot run these)}
+\hrule
+
+\noindent The fixes above are necessary but not sufficient. As written, your empirical section only
+shows wins, which reads as rigged once a reviewer sees Theorem~\ref{thm:lower}. Add:
+
+\begin{enumerate}[nosep]
+\item \textbf{The failure experiment \textcolor{red}{[LOAD-BEARING]}.} A bandit where the reference
+covers only part of the arms and the sycophants lie on an \emph{uncovered} arm that is the true
+optimum. Show ESA fails there, and that it fails exactly at the boundary
+Theorem~\ref{thm:lower} predicts. A paper that demonstrates its own predicted failure mode is far
+more credible than one that only wins.
+\item \textbf{Real baselines.} Replace/augment mean, median, Dawid--Skene, GAIL with the robust
+methods you already cite: WDPO, KLDPO, RRM. Beating only weak baselines is a standard reviewer
+complaint.
+\item \textbf{Theory overlay.} On the sycophant-ratio sweep, plot the predicted tipping point (the
+coverage/dominance boundary) against the empirical phase transition. Tie theory to data.
+\item \textbf{Fail-safe metric.} Report the abstention/deferral rate under the absolute rule
+(Prop.~\ref{prop:failsafe}), especially at $100\%$ bias, to substantiate ``fails toward abstention,
+not toward the lie.''
+\item \textbf{Honesty on scale.} Keep the Hopper $y\propto -v_x$ caricature but label it a stress
+test, not a realistic annotator. If you can, add one preference/contextual-bandit setup with a
+\emph{learned} verifier as $z$ to show the method survives an imperfect, partial reference.
+\item \textbf{Stats.} Report confidence intervals (you have seeds; use them) and state them in
+captions.
+\end{enumerate}
+
+\bigskip
+\hrule
+\section*{Bib entries to add}
+\hrule
+\begin{verbatim}
+@inproceedings{freund1997,
+  author = {Freund, Yoav and Schapire, Robert E.},
+  title  = {A Decision-Theoretic Generalization of On-Line Learning
+            and an Application to Boosting},
+  journal= {Journal of Computer and System Sciences}, year={1997}}
+@article{arora2012mwu,
+  author = {Arora, Sanjeev and Hazan, Elad and Kale, Satyen},
+  title  = {The Multiplicative Weights Update Method: A Meta-Algorithm
+            and Applications}, journal={Theory of Computing}, year={2012}}
+@inproceedings{charikar2017untrusted,
+  author={Charikar, Moses and Steinhardt, Jacob and Valiant, Gregory},
+  title={Learning from Untrusted Data}, booktitle={STOC}, year={2017}}
+@inproceedings{steinhardt2018resilience,
+  author={Steinhardt, Jacob and Charikar, Moses and Valiant, Gregory},
+  title={Resilience: A Criterion for Learning in the Presence of Arbitrary Outliers},
+  booktitle={ITCS}, year={2018}}
+@inproceedings{karger2011iterative,
+  author={Karger, David R. and Oh, Sewoong and Shah, Devavrat},
+  title={Iterative Learning for Reliable Crowdsourcing Systems},
+  booktitle={NeurIPS}, year={2011}}
+@inproceedings{zhang2014spectral,
+  author={Zhang, Yuchen and Chen, Xi and Zhou, Dengyong and Jordan, Michael I.},
+  title={Spectral Methods Meet EM: A Provably Optimal Algorithm for Crowdsourcing},
+  booktitle={NeurIPS}, year={2014}}
+@inproceedings{ghosh2011moderators,
+  author={Ghosh, Arpita and Kale, Satyen and McAfee, Preston},
+  title={Who Moderates the Moderators? Crowdsourcing Abuse Detection},
+  booktitle={EC}, year={2011}}
+@inproceedings{dalvi2013aggregating,
+  author={Dalvi, Nilesh and Dasgupta, Anirban and Kumar, Ravi and Rastogi, Vibhor},
+  title={Aggregating Crowdsourced Binary Ratings}, booktitle={WWW}, year={2013}}
+% [VERIFY] exact venues/years for the six entries above.
+@inproceedings{lambert2024tulu,
+  author={Lambert, Nathan and others},
+  title={T\"ulu 3: Pushing Frontiers in Open Language Model Post-Training},
+  year={2024}, note={arXiv:2411.15124}}
+@article{guo2025deepseekr1,
+  author={{DeepSeek-AI}},
+  title={DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning},
+  year={2025}, note={arXiv:2501.12948}}
+@article{shao2024deepseekmath,
+  author={Shao, Zhihong and others},
+  title={DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models},
+  year={2024}, note={arXiv:2402.03300}}
+@inproceedings{lightman2023verify,
+  author={Lightman, Hunter and others},
+  title={Let's Verify Step by Step}, booktitle={ICLR}, year={2024}, note={arXiv:2305.20050}}
+@inproceedings{skalse2022reward,
+  author={Skalse, Joar and others},
+  title={Defining and Characterizing Reward Hacking}, booktitle={NeurIPS}, year={2022}}
+% [VERIFY] exact venues/years for the five RLVR entries above; add Su et al. (2025).
+% Rename existing keys to reflect what they actually are:
+%   liu2024rrm  -> Liu et al., "RRM: Robust Reward Model...", arXiv:2409.13156, 2024
+%   xu2025robust-> Xu et al., "Robust LLM Alignment via Distributionally
+%                  Robust DPO (WDPO/KLDPO)", arXiv:2502.01930, 2025
+% DELETE every "R3M" label; it is Nair et al. 2022 (robotics), unrelated.
+\end{verbatim}
+
+\bigskip
+\hrule
+\section*{Priority order (do these first)}
+\hrule
+\begin{enumerate}[nosep]
+\item Theorem~\ref{thm:lower} + Theorem~\ref{thm:upper} (the coverage characterization) and the
+failure experiment in D1. Without this the paper is thin no matter what else you fix.
+\item Prop.~\ref{prop:rlvr} (verifiable-subtask anchoring, Sec.~B7). Double duty: it answers ``where
+does $z$ come from'' with free verifiers (RLVR), and it is the \emph{framing fix} R4 demanded ---
+on the verifiable region a ground truth exists, so you drop the contested ``true human intent.'' Do
+this even before the full framing rewrite; it resolves most of R4's objection on its own.
+\item Theorem~\ref{thm:audit} (audit complexity) $+$ Corollary~\ref{cor:internal} (internal-only
+impossibility), with per-region trust (Def.~\ref{def:regiontrust}). Together: external grounding is
+irreducible but its cost is finite and independent of $T$. This is the direct answer to R3/R4's
+``the reference may be unavailable or expensive'' objection, and it is the most \emph{interesting}
+addition.
+\item Prop.~\ref{prop:bloc} (bloc-adaptive auditing, Sec.~B6). Optional but high value: it makes the
+audit budget instance-adaptive and, via the covariance-shift trigger, folds your strategic-adversary
+and contagion experiments (Testbed 3) into the theory instead of leaving them as standalone demos.
+Low marginal cost since it reuses experiments you already ran.
+\item Prop.~\ref{prop:failsafe} (absolute distrust) --- it turns a false claim into a real safety
+property.
+\item Lemma~\ref{lem:bridge} --- the trust$\to$policy link your draft asserts.
+\item A9 overclaim fixes, A8 citation fixes, A2 ``Dogma 4'' reframe. Cheap, and each is a live
+reviewer objection.
+\end{enumerate}
+
+\end{document}

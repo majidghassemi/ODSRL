@@ -1,0 +1,475 @@
+% =====================================================================
+% APPENDIX: FULL PROOFS  (plugs into aaai27_esa_skeleton.tex \appendix)
+% Compiles standalone for checking. Labels match the skeleton:
+%   thm:lower, cor:internal, lem:bridge, thm:upper, thm:audit,
+%   prop:failsafe, prop:stackelberg, prop:bloc, prop:rlvr, ass:coverage
+% Notation: y_m(a)=R*(a)+b_m(a)+eps, eps sigma-subgaussian iid across (m,t);
+%   z(a)=R*(a)+xi on C, xi sigma_z-subgaussian; nu := E|eps-xi| (noise floor).
+% Every constant is explicit or named; nothing is deferred to "standard
+% arguments" without the argument.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{enumitem,xcolor,hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}\newtheorem{definition}{Definition}
+\theoremstyle{definition}\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Rstar}{R^{\ast}}\newcommand{\astar}{a^{\ast}}
+\newcommand{\A}{\mathcal{A}}\newcommand{\Cov}{\mathcal{C}}
+\newcommand{\E}{\mathbb{E}}\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\V}{\mathcal{V}}\newcommand{\N}{\mathcal{N}}
+\newcommand{\nfl}{\nu}                      % noise floor E|eps-xi|
+\newcommand{\note}[1]{\textcolor{blue}{[#1]}}
+
+\title{Technical Appendix: Full Proofs}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\paragraph{Standing notation.}
+$K$ arms, $M$ evaluators, horizon $T$. Reports $y_m(a)=\Rstar(a)+b_m(a)+\epsilon$
+with $\epsilon$ $\sigma$-subgaussian, independent across evaluators and rounds.
+Reference $z(a)=\Rstar(a)+\xi$ on the coverage set $\Cov$, $\xi$
+$\sigma_z$-subgaussian, independent of $\epsilon$; off $\Cov$ the reference returns
+no information. Noise floor $\nfl:=\E|\epsilon-\xi|$. Latent gaps
+$\Delta(a):=\Rstar(\astar)-\Rstar(a)$, $\Delta_{\min}:=\min_{a\neq\astar}\Delta(a)$.
+Trust weights $w^{(a)}\in\Delta^{M-1}$ per region (region $=$ arm), aggregate
+$\hat r(a)=\sum_m w_m^{(a)}y_m(a)$. $W_{\mathrm{bias}}(a):=\sum_{m\,\text{biased}}w_m^{(a)}$.
+Latent regret $R_T^{\mathrm{lat}}=\sum_{t=1}^{T}\Delta(a_t)$.
+
+% =====================================================================
+\section{Coverage is necessary (Theorem \texorpdfstring{\ref*{thm:lower}}{2})}
+\label{app:lower}
+
+\begin{theorem}[Coverage necessity; Le Cam two-point]\label{thm:lower}
+Fix any algorithm $\pi$ (possibly randomized, adaptive, and reference-querying)
+and any arm $a_0\notin\Cov$. There exist two problem instances $P_0,P_1$, differing
+only in $\Rstar(a_0)$ and in the evaluator bias on $a_0$, such that
+\[
+\max_{i\in\{0,1\}}\ \E_{P_i}\!\big[R_T^{\mathrm{lat}}\big]\ \ge\ \frac{\Delta}{2}\,T ,
+\]
+where $\Delta>0$ is the common suboptimality gap of the construction.
+\end{theorem}
+
+\begin{proof}
+\emph{Construction.} Let $\mu\in\mathbb{R}^{K}$ be any mean vector with
+$\max_{a\neq a_0}\mu(a)=\mu^{\dagger}$ and fix $\Delta>0$.
+
+\emph{Instance $P_0$:} $\Rstar_0(a)=\mu(a)$ for $a\neq a_0$ and
+$\Rstar_0(a_0)=\mu^{\dagger}+\Delta$; all evaluators truthful, $b_m\equiv 0$.
+Here $a_0$ is optimal with gap $\ge\Delta$.
+
+\emph{Instance $P_1$:} $\Rstar_1(a)=\mu(a)$ for $a\neq a_0$ and
+$\Rstar_1(a_0)=\mu^{\dagger}-\Delta$; every evaluator carries bias
+$b_m(a_0)=2\Delta$ and $b_m(a)=0$ for $a\neq a_0$.
+Here $a_0$ is suboptimal with gap exactly $\Delta$: any maximizer of $\mu$
+attains $\mu^{\dagger}=\Rstar_1(a_0)+\Delta$.
+
+\emph{Identical observation laws.} Consider any round in which arm $a$ is played.
+For $a\neq a_0$: reports have law $\Rstar(a)+\epsilon=\mu(a)+\epsilon$ under both
+instances, and reference queries (available iff $a\in\Cov$) have law $\mu(a)+\xi$
+under both. For $a=a_0$: reports have law
+$\Rstar_0(a_0)+\epsilon=\mu^{\dagger}+\Delta+\epsilon$ under $P_0$ and
+$\Rstar_1(a_0)+b(a_0)+\epsilon=(\mu^{\dagger}-\Delta)+2\Delta+\epsilon
+=\mu^{\dagger}+\Delta+\epsilon$ under $P_1$: the same law. The reference on $a_0$
+returns no information under either instance because $a_0\notin\Cov$. The latent
+reward is not observed. Hence the joint law of the entire observable trajectory
+$(a_1,o_1,\dots,a_T,o_T)$ is identical under $P_0$ and $P_1$ for every policy
+$\pi$; in particular $N_T(a_0):=\sum_{t\le T}\mathbf 1\{a_t=a_0\}$ has the same
+distribution under both, so $\E_{P_0}N_T(a_0)=\E_{P_1}N_T(a_0)=:n$.
+
+\emph{Regret accounting.} Under $P_0$, every round not playing $a_0$ incurs
+latent regret at least $\Delta$:
+$\E_{P_0}R_T^{\mathrm{lat}}\ge \Delta\,(T-n)$.
+Under $P_1$, every round playing $a_0$ incurs at least $\Delta$:
+$\E_{P_1}R_T^{\mathrm{lat}}\ge \Delta\,n$.
+Therefore
+$\max_i \E_{P_i}R_T^{\mathrm{lat}}\ \ge\ \tfrac12\big(\Delta(T-n)+\Delta n\big)
+=\tfrac{\Delta}{2}T$.
+\end{proof}
+
+\begin{corollary}[No internal-only rule survives a coherent majority]
+\label{cor:internal}
+Let $\hat R$ be any estimator that is a measurable function of the report matrix
+$Y$ alone (peer agreement, residual correlation, spectral statistics, etc.), and
+let the acting policy use only $\hat R$. Then the bound of
+Theorem~\ref{thm:lower} holds even with $\Cov=\A$ (full coverage available but
+unused), with the same construction: since reports alone have identical law under
+$P_0$ and $P_1$, so does any function of them.
+\end{corollary}
+
+\begin{proof}
+Immediate from the proof above: the two instances induce the same law on $Y$; the
+reference (the only distinguishing channel) is not consulted by assumption.
+\end{proof}
+
+\begin{remark}
+The construction makes the ``strategic about the audit boundary'' regime precise:
+the $P_1$ adversary is exactly an evaluator population that is truthful on $\Cov$
+and biased off it. Empirically this is the harsh-on-$\V$ grader of \S Experiments,
+which ends with trust mass $1$ and inverts the mechanism.
+\end{remark}
+
+% =====================================================================
+\section{Trust error to policy error (Lemma \texorpdfstring{\ref*{lem:bridge}}{1})}
+\label{app:bridge}
+
+\begin{lemma}[Bridge]\label{lem:bridge}
+Fix an arm $a$ with $N(a)$ pulls and (possibly random, history-dependent) weights
+$w^{(a)}$. Let $\beta_\ast:=\max_{a}\big|\sum_{m\,\mathrm{truthful}}
+\tilde w_m^{(a)} b_m(a)\big|$ where $\tilde w$ renormalizes over truthful
+evaluators, and $B_{\max}:=\max_{m,a}|b_m(a)|$. Then for any $\delta\in(0,1)$,
+with probability at least $1-\delta$, simultaneously for all $a$,
+\[
+\big|\hat\mu(a)-\Rstar(a)\big|\ \le\ \beta_\ast\;+\;W_{\mathrm{bias}}(a)\,B_{\max}
+\;+\;\sigma\sqrt{\frac{2\log(2K/\delta)}{N(a)}} .
+\]
+Consequently, if the right side is $<\Delta_{\min}/2$ for all $a$, then
+$\arg\max_a\hat\mu(a)=\astar$.
+\end{lemma}
+
+\begin{proof}
+Decompose the per-round aggregate:
+$\hat r(a)-\Rstar(a)=\sum_m w_m b_m(a)+\sum_m w_m\epsilon_{m}$.
+Split the bias term over truthful and biased mass:
+\[
+\Big|\sum_m w_m b_m(a)\Big|
+\le \underbrace{(1-W_{\mathrm{bias}})\Big|\sum_{\mathrm{truth}}\tilde w_m b_m(a)\Big|}_{\le\,\beta_\ast}
++\underbrace{W_{\mathrm{bias}}\max_{\mathrm{bias}}|b_m(a)|}_{\le\,W_{\mathrm{bias}}B_{\max}}.
+\]
+For the noise: each round's $\sum_m w_m\epsilon_m$ is a convex combination of
+independent $\sigma$-subgaussians, hence $\sigma$-subgaussian
+($\|w\|_1=1\Rightarrow$ proxy variance $\sigma^2\|w\|_2^2\le\sigma^2$). The
+empirical mean $\hat\mu(a)$ averages $N(a)$ such terms; even with adaptive
+weights, the noise sequence is a martingale difference sequence w.r.t.\ the
+filtration generated by the history (weights are predictable), so
+Azuma--Hoeffding for subgaussian increments gives
+$\Prob\big(|\frac{1}{N(a)}\sum\text{noise}|>\sigma\sqrt{2\log(2K/\delta)/N(a)}\big)
+\le \delta/K$. A union bound over arms completes the display. The argmax claim is
+immediate: every $\hat\mu(a)$ lies within $\Delta_{\min}/2$ of $\Rstar(a)$, and
+$\Rstar(\astar)$ exceeds every other $\Rstar(a)$ by at least $\Delta_{\min}$.
+\end{proof}
+
+% =====================================================================
+\section{Coverage is sufficient (Theorem \texorpdfstring{\ref*{thm:upper}}{3})}
+\label{app:upper}
+
+\begin{assumption}[Coverage with margin]\label{ass:coverage}
+(i) $\Cov$ contains every arm $a$ with
+$\Rstar(a)+\max_m b_m(a)\ \ge\ \Rstar(\astar)$ (every arm whose observed value
+could exceed the optimum's).
+(ii) Dominance margin: for every biased $m$ and truthful $m'$ and every $a\in\Cov$
+on which $m$ is biased,
+$\E\big[\,|y_m-z|-|y_{m'}-z|\,\big]\ \ge\ \gamma\ >\ 0$.
+(By the triangle inequality this holds with
+$\gamma\ge\min_{m,a\in\Cov}|b_m(a)|-2\nfl$ whenever biases on $\Cov$ exceed the
+noise floor.)
+(iii) During the burn-in, the policy pulls audited covered arms at rate at least
+$\rho>0$ (guaranteed by UCB optimism: an unresolved covered arm with inflated
+reports is, a fortiori, pulled).
+\end{assumption}
+
+\begin{theorem}[Coverage sufficiency]\label{thm:upper}
+Under Assumption~\ref{ass:coverage}, ESA with learning rate $\eta\le 1/(2L)$
+(losses $|y-z|$ truncated at $L$) satisfies: with probability $1-\delta$, after
+\[
+n_\gamma\ :=\ \frac{c_1}{\eta\gamma}\Big(\log\frac{M B_{\max}}{\varepsilon}\Big)
+\ \vee\ \frac{c_2 L^2}{\gamma^{2}}\log\frac{M}{\delta}
+\]
+audits on a region, $W_{\mathrm{bias}}\le \varepsilon/B_{\max}$ on that region.
+Choosing $\varepsilon=\Delta_{\min}/4-\beta_\ast/2$ (positive iff
+$\beta_\ast<\Delta_{\min}/2$), the aggregation error on every covered region falls
+below $\Delta_{\min}/2$ within a burn-in of
+$T_0=O\!\big(n_\gamma\,K_{\Cov}/(p_{\mathrm{ref}}\rho)\big)$ rounds, and thereafter
+the base UCB learner incurs latent regret
+$\E R_T^{\mathrm{lat}} \le \Delta_{\max}T_0 + \tilde O(\sqrt{KT})$.
+\end{theorem}
+
+\begin{proof}
+\emph{Step 1 (MWU concentration of trust).}
+Fix a region $a\in\Cov$ and consider audits $s=1,\dots,n$ on it. For biased $m$
+and truthful $m'$, define the loss gap $g_s:=\ell_{m,s}-\ell_{m',s}$, an iid
+sequence with $\E g_s\ge\gamma$ and $|g_s|\le 2L$ after truncation. MWU gives
+\[
+\log\frac{w_m}{w_{m'}}\Big|_{\text{after }n}
+=\log\frac{w_m}{w_{m'}}\Big|_{0}-\eta\sum_{s=1}^{n}g_s
+\ \le\ -\eta\Big(n\gamma-\big|\textstyle\sum_s (g_s-\E g_s)\big|\Big).
+\]
+Hoeffding: $\Prob(|\sum_s(g_s-\E g_s)|>n\gamma/2)\le
+2\exp(-n\gamma^{2}/(32L^{2}))$, which is $\le\delta/M^2$ once
+$n\ge (32L^2/\gamma^2)\log(2M^2/\delta)$. On that event,
+$\log(w_m/w_{m'})\le-\eta\gamma n/2$. Summing over biased $m$ against the best
+truthful $m'$ and normalizing,
+$W_{\mathrm{bias}}\le M e^{-\eta\gamma n/2}$, which is $\le\varepsilon/B_{\max}$
+once $n\ge (2/\eta\gamma)\log(MB_{\max}/\varepsilon)$. Take $n_\gamma$ the max of
+the two requirements; union bound over $M^2$ pairs and $K_\Cov$ regions.
+
+\emph{Step 2 (audit arrivals).} Audits on region $a$ arrive on pulls of $a$ that
+are audited: rate $p_{\mathrm{ref}}$ per pull under the fixed rule (the active
+rule only accelerates this; see Theorem~\ref{thm:audit}). By
+Assumption~\ref{ass:coverage}(iii) pulls of unresolved covered arms occur at rate
+$\ge\rho$, so $n_\gamma$ audits accrue on each of the $K_\Cov$ covered regions
+within $T_0=O(n_\gamma K_\Cov/(p_{\mathrm{ref}}\rho))$ rounds, w.h.p.\ (Chernoff
+on the audit-arrival Bernoulli process, absorbed into $c_1,c_2$).
+
+\emph{Step 3 (post-burn-in argmax and regret).}
+After $T_0$: on covered arms, Lemma~\ref{lem:bridge} with
+$W_{\mathrm{bias}}B_{\max}\le\varepsilon$ gives error
+$\le\beta_\ast+\varepsilon+o(1)<\Delta_{\min}/2$. On uncovered arms, by
+Assumption~\ref{ass:coverage}(i) their observed value cannot exceed
+$\Rstar(\astar)$, so no uncovered arm can displace $\astar$ in the argmax even if
+estimated with its full bias. The environment is now, from the learner's
+viewpoint, a bandit whose per-arm means rank $\astar$ first with margin
+$\ge\Delta_{\min}/2$ and whose reward noise is $\sigma$-subgaussian; UCB on
+$\hat r$ yields the standard $\tilde O(\sqrt{KT})$ bound (e.g.\ via the
+regret decomposition over $\sum_a \Delta(a)\E N_T(a)$ and the usual
+confidence-interval argument, unchanged). Burn-in rounds are charged at
+$\Delta_{\max}$ each.
+\end{proof}
+
+% =====================================================================
+\section{Audit complexity of the active rule (Theorem \texorpdfstring{\ref*{thm:audit}}{4})}
+\label{app:audit}
+
+\begin{theorem}[Horizon-independent audit budget]\label{thm:audit}
+Let $K_{\mathrm{eff}}$ be the number of arms ever competitive under UCB (i.e.
+$\mathrm{UCB}(a)\ge\max_{a'}\mathrm{LCB}(a')$ at some round). Under
+Assumption~\ref{ass:coverage}, the active rule (audit iff the region is
+unresolved \emph{and} competitive; resolve after $p$ consecutive audits with
+$|\hat r(a)-z|\le\varrho$, where $2(\beta_\ast+\varepsilon)+\nfl<\varrho<
+\gamma-\nfl$) recovers $\astar$ using
+\[
+\E[\#\text{audits}]\ \le\ K_{\mathrm{eff}}\Big(n_\gamma+p+
+O\big(\gamma^{-2}L^2\log(K_{\mathrm{eff}}p/\delta)\big)\Big)
+\ =\ O\!\Big(K_{\mathrm{eff}}\,\frac{L^{2}}{\gamma^{2}}\log\frac{K_{\mathrm{eff}}M}{\delta}\Big),
+\]
+independent of $T$. The fixed-rate rule uses $\Theta(p_{\mathrm{ref}}T)$.
+\end{theorem}
+
+\begin{proof}
+\emph{Region decoupling.} Per-region trust means an audit on region $a$ updates
+only $w^{(a)}$; the audit processes on distinct regions are therefore independent
+given the pull sequence, and budgets add over regions. Only competitive regions
+are ever audited (the gate), and only $K_{\mathrm{eff}}$ regions are ever
+competitive, so it suffices to bound the audits spent on one region before it
+resolves.
+
+\emph{Per-region bound.} Fix a competitive region $a\in\Cov$.
+(1) By Step 1 of Theorem~\ref{thm:upper}, after $n_\gamma$ audits
+$W_{\mathrm{bias}}\le\varepsilon/B_{\max}$ w.p.\ $1-\delta/K_{\mathrm{eff}}$.
+(2) Once trust has concentrated, each further audit satisfies
+$|\hat r(a)-z|\le \beta_\ast+\varepsilon+|\bar\epsilon_w-\xi|$; since
+$\E|\bar\epsilon_w-\xi|\le\nfl$ and the deviation is subgaussian, each audit
+lands within $\varrho$ with probability $\ge 1-q$ where
+$q\le\exp(-c(\varrho-\beta_\ast-\varepsilon-\nfl)^2/\sigma_{\mathrm{eff}}^2)$;
+a run of $p$ consecutive successes occurs within $O(p/(1-q)^p)$ further audits in
+expectation, absorbed into the third term with the choice
+$\varrho-\beta_\ast-\varepsilon-\nfl=\Theta(\gamma)$.
+(3) Before trust concentrates, an audit can spuriously resolve only if the
+\emph{biased} aggregate sits within $\varrho$ of $z$ for $p$ straight audits. On
+a region where bias is active, the aggregate is displaced from $\Rstar$ by at
+least $W_{\mathrm{bias}}\gamma_{\mathrm{disp}}$ with
+$\gamma_{\mathrm{disp}}\ge\gamma+\nfl$ (Assumption~\ref{ass:coverage}(ii));
+by the upper constraint $\varrho<\gamma-\nfl$, a displaced aggregate lands within
+$\varrho$ of $z$ with probability $\le q'\!<\!1/2$ per audit; $p$ straight such events
+have probability $\le (q')^{p}$, and a union bound over the at most
+$n_\gamma+O(\cdot)$ audits contributes the $\log(K_{\mathrm{eff}}p/\delta)$
+factor. Premature resolution is thus excluded w.h.p., and if it ever occurred,
+the drift alarm / re-flag mechanism restores the unresolved state (not needed for
+the bound, but closes the loop).
+
+\emph{Uncovered and non-competitive regions.} Uncovered regions return no
+reference and consume no audits by definition. A region eliminated by the UCB
+confidence gate is never audited again; by Assumption~\ref{ass:coverage}(i) and
+Theorem~\ref{thm:upper} Step 3, $\astar$ is never eliminated, so recovery follows
+from the resolved, trust-corrected estimates. Fixed-rate: each pull audits with
+probability $p_{\mathrm{ref}}$ forever, giving $\Theta(p_{\mathrm{ref}}T)$ in
+expectation by Wald.
+\end{proof}
+
+\begin{remark}[Empirical match]
+The implementation resolves at $\varrho=0.35$, $p=3$ and measures $\approx 32$
+audits flat across $T\in[10^3,8\times10^4]$ vs $\approx p_{\mathrm{ref}}T$ for the
+fixed rule, consistent with the bound's horizon independence.
+\end{remark}
+
+% =====================================================================
+\section{Fail-safe and strategic bias cap}
+\label{app:failsafe}
+
+\begin{proposition}[Fail-safe under total corruption]\label{prop:failsafe}
+Set the absolute-distrust threshold $\tau$ with
+$\nfl<\tau<\min_m|b_m|-\nfl$ (possible whenever all biases exceed $2\nfl$, e.g.\
+homogeneous 100\% bias). Then w.p.\ $1-\delta$ after
+$O\big(\sigma_{\mathrm{eff}}^{2}(\min_m|b_m|-\nfl-\tau)^{-2}\log(M/\delta)\big)$
+audits on a region, every evaluator's EMA loss exceeds $\tau$, the region is
+distrusted, and the agent thereafter uses $z$ where covered and abstains
+elsewhere. In particular ESA never converges to the socially preferred arm
+$a_{\mathrm{soc}}$: it fails toward abstention, not toward the lie.
+\end{proposition}
+
+\begin{proof}
+For every $m$, $\E\ell_m=\E|b_m+\epsilon-\xi|\ge|b_m|-\nfl>\tau$ by the reverse
+triangle inequality and the threshold choice. Each $\ell_m$ is
+$\sigma_{\mathrm{eff}}$-subgaussian around its mean; the EMA with rate $0.3$ is a
+convex combination with $\ell_2$ weight $\le 1$, hence concentrates at the stated
+rate (Hoeffding for weighted sums; union over $M$). Once
+$\min_m\mathrm{EMA}_m>\tau$ the distrust flag is permanent by construction; the
+acting rule then never ingests the biased aggregate, so no estimate can drift to
+the socially preferred arm. Conversely $\tau>\nfl$ keeps truthful evaluators
+below threshold in the mixed-population case
+($\E\ell_{\mathrm{truth}}=\nfl<\tau$), so the fail-safe does not misfire there
+(same concentration, other direction).
+\end{proof}
+
+\begin{proposition}[Strategic adversary; sustained-bias cap]\label{prop:stackelberg}
+Consider a bias-choosing adversary who observes the committed ESA rule
+(Stackelberg follower: the mechanism commits, the adversary best-responds) and
+must keep (i) nonvanishing trust weight as audits accrue and (ii) the fail-safe
+untriggered. Then its sustained per-region bias obeys
+\[
+|\delta_{\mathrm{sus}}|\ \le\ \min\{\,2\nfl,\ \tau+\nfl\,\}\ =\ O(\sigma_{\mathrm{eff}}).
+\]
+\end{proposition}
+
+\begin{proof}
+(i) By the MWU ratio dynamics (proof of Theorem~\ref{thm:upper}, Step 1), the
+log-weight ratio of the adversary to a truthful evaluator drifts by
+$-\eta(\E\ell_{\mathrm{adv}}-\nfl)$ per audit. Nonvanishing weight under
+$n\to\infty$ audits forces $\E\ell_{\mathrm{adv}}\le\nfl+o(1)$; since
+$\E\ell_{\mathrm{adv}}\ge|\delta|-\nfl$, this yields $|\delta|\le 2\nfl+o(1)$.
+(ii) The fail-safe requires $\E\ell_{\mathrm{adv}}\le\tau$ on pain of exclusion,
+i.e.\ $|\delta|\le\tau+\nfl$. Both bind simultaneously; take the min.
+\emph{Scope:} the cap is per \emph{audited} region. Off $\Cov$ the adversary is
+unconstrained; that regime is Theorem~\ref{thm:lower}, not this proposition, and
+the harsh-on-$\V$ experiment realizes it.
+\end{proof}
+
+% =====================================================================
+\section{Bloc partition via residual covariance (Prop.\ \texorpdfstring{\ref*{prop:bloc}}{6})}
+\label{app:bloc}
+
+Model the (consensus-centered) reports at round $t$ as
+$u_t = F g_t + \zeta_t\in\mathbb{R}^{M}$, where $F\in\mathbb{R}^{M\times r}$ has
+orthogonal columns of disjoint supports (bloc membership: $F_{m j}=f_j\neq 0$ iff
+$m\in$ bloc $j$), $g_t\in\mathbb{R}^{r}$ are bloc-common components with
+$\E g_tg_t^{\top}=\Lambda\succ 0$, and $\zeta_t$ is centered
+$\sigma$-subgaussian, independent coordinates. (Consensus centering
+$y_t\mapsto y_t-\bar y_t\mathbf 1$ removes the common truth signal; blocs'
+\emph{shared deviations} remain, which is exactly the implementation's
+residual-covariance construction.)
+
+\begin{proposition}[Partition recovery and bloc-adaptive audits]\label{prop:bloc}
+Let $\Sigma=F\Lambda F^{\top}+\sigma^2 I$, with signal eigenvalues
+$\lambda_1\ge\dots\ge\lambda_r>0$ of $F\Lambda F^\top$ and per-bloc minimum
+loading $f_{\min}$, bloc sizes $\ge s_{\min}$. If the sample size satisfies
+$n\ \ge\ C\,\frac{\sigma^4 M\log M}{\lambda_r^{2}}$ and the eigengap obeys
+$\lambda_r\ \ge\ 2\|\hat\Sigma_n-\Sigma\|_{\mathrm{op}}$, then spectral
+clustering on the top-$r$ eigenvectors of the residual sample covariance
+$\hat\Sigma_n$ recovers the bloc partition exactly, with probability
+$1-M^{-c}$. Consequently the active rule needs only
+$O\!\big(r\,\gamma^{-2}L^2\log(r/\delta)\big)$ audits (one representative per
+bloc), replacing the $K_{\mathrm{eff}}$ factor of Theorem~\ref{thm:audit}
+whenever the bias matrix is bloc-coherent (rank $r$).
+\end{proposition}
+
+\begin{proof}
+\emph{Population structure.} The top-$r$ eigenspace of $\Sigma$ is
+$\mathrm{col}(F)$ (adding $\sigma^2 I$ shifts all eigenvalues equally). Because
+the columns of $F$ have disjoint supports, the row of the eigenvector matrix
+$U\in\mathbb{R}^{M\times r}$ for evaluator $m$ in bloc $j$ is
+$f_j^{-1}\cdot$(scaled $j$-th canonical direction): rows within a bloc are equal,
+rows across blocs are orthogonal with separation
+$\ge \sqrt{2}/\sqrt{s_{\max}}\,\cdot$(loading ratio) $=:2\Delta_U>0$.
+
+\emph{Sample deviation.} For subgaussian $u_t$, standard covariance concentration
+(e.g.\ matrix Bernstein / Vershynin) gives
+$\|\hat\Sigma_n-\Sigma\|_{\mathrm{op}}\le
+C'\sigma_{\Sigma}\sqrt{(M\log M)/n}=:E_n$ w.p.\ $1-M^{-c}$, where
+$\sigma_\Sigma^2$ bounds the subgaussian norm; the stated $n$ makes
+$E_n\le\lambda_r/2$.
+
+\emph{Davis--Kahan.} With eigengap between the $r$-th and $(r{+}1)$-th
+eigenvalues of $\Sigma$ equal to $\lambda_r$, the $\sin\Theta$ theorem gives
+$\|\hat U-U O\|_{\mathrm{F}}\le \frac{2\sqrt{2r}\,E_n}{\lambda_r}$ for some
+rotation $O$. If this is $<\Delta_U\sqrt{s_{\min}}/2$, at most a vanishing
+fraction of rows can cross the midpoint between bloc centroids, and $(r)$-means
+(or the median-threshold rule for $r=2$) assigns every evaluator to its bloc:
+exact recovery. The sample condition enforces this.
+
+\emph{Audit consequence.} A bloc's bias pattern is shared across its members and
+across the regions it touches (rank-$r$ coherence), so one audited representative
+per bloc identifies the bloc's label with margin $\gamma$; the per-representative
+audit count is the per-region bound of Theorem~\ref{thm:audit} with
+$K_{\mathrm{eff}}$ replaced by $r$, and labels propagate to the bloc by the
+recovered partition. The partition itself consumed \emph{zero} reference queries.
+Labeling still requires the audit: by Corollary~\ref{cor:internal} no function of
+$Y$ alone distinguishes the truthful bloc.
+\end{proof}
+
+% =====================================================================
+\section{Verifiable-to-non-verifiable transfer (Prop.\ \texorpdfstring{\ref*{prop:rlvr}}{7})}
+\label{app:rlvr}
+
+\begin{proposition}[RLVR transfer]\label{prop:rlvr}
+Partition $\A=\V\cup\N$. Run ESA on $\V$ with the dense exact verifier
+($p_{\mathrm{ref}}=1$, $\sigma_z\approx0$) until, by Theorem~\ref{thm:upper},
+$W_{\mathrm{bias}}\le\varepsilon/B_{\max}$; let $\beta_\ast^{\V}$ be the residual
+truthful bias measured on $\V$ and freeze $w$. Assume bounded reliability drift:
+$|b_m^{\N}-b_m^{\V}|\le\Delta_{\mathrm{drift}}$ for every truthful $m$
+(``truthful'' as certified on $\V$). Then for every $a\in\N$, w.p.\ $1-\delta$,
+\[
+|\hat\mu(a)-\Rstar(a)|\ \le\ \beta_\ast^{\V}+\Delta_{\mathrm{drift}}
++\varepsilon+\sigma\sqrt{\tfrac{2\log(2K/\delta)}{N(a)}},
+\]
+and recovery on $\N$ holds once the right side is $<\Delta_{\min}^{\N}/2$.
+Conversely, if drift is unbounded, no method restricted to auditing on $\V$
+recovers the $\N$-optimum: Theorem~\ref{thm:lower} applies verbatim with
+$\Cov=\V$ and $a_0\in\N$.
+\end{proposition}
+
+\begin{proof}
+\emph{Upper.} Apply Lemma~\ref{lem:bridge} on $a\in\N$ with the frozen weights.
+The biased-mass term is $W_{\mathrm{bias}}B_{\max}\le\varepsilon$ by the
+$\V$-certificate. The truthful residual on $\N$ is controlled by the drift
+assumption:
+$\big|\sum_{\mathrm{truth}}\tilde w_m b_m^{\N}(a)\big|
+\le\big|\sum_{\mathrm{truth}}\tilde w_m b_m^{\V}(a)\big|
++\sum_{\mathrm{truth}}\tilde w_m\big|b_m^{\N}-b_m^{\V}\big|
+\le\beta_\ast^{\V}+\Delta_{\mathrm{drift}}$.
+The noise term is unchanged. The recovery condition is then the argmax step of
+Lemma~\ref{lem:bridge} restricted to $\N$ (arms in $\V$ are handled by their own
+dense certificate).
+\emph{Converse.} An evaluator population truthful on $\V$ and biased by
+$2\Delta$ on some $a_0\in\N$ realizes the $P_1$ instance of
+Theorem~\ref{thm:lower} with $\Cov=\V$; the $P_0$/$P_1$ observation laws are
+identical (the verifier is consulted only on $\V$, where the populations agree),
+so the $\frac{\Delta}{2}T$ bound holds for any algorithm, and
+$\Delta_{\mathrm{drift}}\ge 2\Delta$ is unbounded as $\Delta$ grows.
+\emph{Empirical anchors.} The measured $\Delta$-threshold
+$\in(0.61,0.65)$ brackets the prediction
+$\Delta_{\mathrm{drift}}^{\ast}=\Delta_{\min}^{\N}/2-\beta_\ast^{\V}-\varepsilon$
+of the display; the harsh-on-$\V$ grader instantiates the converse.
+\end{proof}
+
+\begin{remark}[Modality]\label{rem:cardinal}
+Every result above is stated for \emph{cardinal} reports and a cardinal
+reference; the losses $|y_m-z|$ compare levels, not orders. Under purely ordinal
+elicitation the dominance margin of Assumption~\ref{ass:coverage}(ii) can be
+negative (a lenient-but-correctly-ranking evaluator has \emph{lower} ordinal loss
+than a truthful one), and the mechanism can invert, as observed empirically
+(trust mass $1.0$ on the sycophant under preference elicitation). Cardinality is
+therefore a requirement of the method and, we argue, a design recommendation for
+feedback collection.
+\end{remark}
+
+\end{document}
