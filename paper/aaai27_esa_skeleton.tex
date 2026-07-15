@@ -56,8 +56,11 @@ succeeds, and no statistic of the reports alone helps. We give a matching algori
 that audits \emph{actively} (a horizon-independent number of queries), tracks trust per region, and
 fails safe to abstention under total corruption. Instantiating the reference with verifiable
 subtasks (RLVR) supplies the audit for free where a ground truth exists and reduces recovery on
-non-verifiable tasks to a \emph{measurable} cross-domain reliability assumption. \run{headline
-result sentence once experiments are in.}
+non-verifiable tasks to a \emph{measurable} cross-domain reliability assumption. On a real LLM grader
+panel with a GSM8K verifier, ESA recovers ground truth on non-verifiable TruthfulQA at $80\%$ where
+every majority-trusting aggregator collapses to $\le 1\%$; the same experiments delimit the method
+sharply --- an adversary strategic about the (public) audit boundary is maximally trusted rather than
+caught, and the mechanism requires \emph{cardinal} feedback, inverting under ordinal elicitation.
 \end{abstract}
 
 % =====================================================================
@@ -110,7 +113,9 @@ per-region trust, an absolute-distrust fail-safe, and correlation-based audit ro
 (\S\ref{sec:algo}).
 \item A verifiable-subtask instantiation (RLVR) that supplies the reference for free and turns the
 key assumption into a measured quantity (\S\ref{sec:rlvr}).
-\item \run{experimental validation, incl. the predicted failure boundary} (\S\ref{sec:exp}).
+\item Validation on synthetic bandits and a real LLM grader panel: recovery under coverage, the
+predicted failure boundary, and two sharp scope conditions (a strategic audit-boundary adversary that
+is maximally trusted, and a cardinal-elicitation requirement) (\S\ref{sec:exp}).
 \end{enumerate}
 
 % =====================================================================
@@ -118,8 +123,13 @@ key assumption into a measured quantity (\S\ref{sec:rlvr}).
 % ~0.5 page. Condensed. All the fixes from the corrections file, one pass.
 \paragraph{Robust reward modeling.} RRM \citep{liu2024rrm} disentangles reward from spurious
 artifacts; distributionally robust DPO (WDPO, KLDPO) \citep{xu2025robust} guards the objective
-against annotation shift. Both assume sparse corruption and a trustworthy bulk. We treat
-\emph{majority-held, systematic} bias, where no clean bulk exists.
+against annotation shift. Both assume sparse corruption and a trustworthy bulk; we treat
+\emph{majority-held, systematic} bias, where no clean bulk exists. They are also \emph{preference}
+(ordinal) methods, and our modality result (\S\ref{sec:exp}) shows ordinal elicitation actively hides
+the dispositional bias we study --- a lenient, correctly-ranking sycophant has \emph{lower} ordinal
+loss than a truthful evaluator. We therefore compare against scalar-reward analogues of these methods
+on our cardinal panel (they still fail under a systematic majority) rather than the original
+preference-optimization objectives, which target a different corruption model on a different modality.
 
 \paragraph{Truth discovery and gold questions.} Weighting annotators by verified ``gold'' items is
 the standard way consensus survives a wrong majority \citep{dawid1979,li2016survey}. Our
@@ -281,45 +291,82 @@ we keep $\sigma_z>0$ on $\V$.
 % =====================================================================
 \section{Experiments}\label{sec:exp}
 % ~1.5 pages. HONEST: only the two synthetic checks are real. Rest is [RUN].
-\paragraph{Q1: Recovery under coverage.} \run{Gridworld + Hopper: ESA recovers $\astar$ where
-consensus (mean, median, Dawid--Skene) and imitation (GAIL) fail. Report latent return with CIs over
-seeds.}
+\paragraph{Q1: Recovery under coverage (MDP).} Gridworld sycophant-trap (10$\times$10, 80\% lazy
+sycophants, 15 seeds): standard RL and median-robust aggregation are fully trapped
+($P(\text{proxy goal})=1.00$), and \emph{global}-trust ESA is nearly so ($0.93$) --- because the
+sycophants are honest in most cells, so the rare divergence is diluted under one weight vector; only
+\emph{per-region} ESA escapes ($0.07$). Hopper-v4 under an 80\% velocity-penalizing majority (5 seeds,
+PPO): per-region ESA attains latent return $2.37\pm0.27$ vs.\ standard PPO $0.97\pm0.00$ and an
+IRL/GAIL imitation baseline $0.98$; a scale-free-network contagion variant shows ESA quarantining the
+highest-degree influencer (trust $\to 0.005$) at 95\% infection.
 
-\paragraph{Q2: The predicted failure boundary (load-bearing).} \run{Bandit with the reference
-covering only part of the space and the sycophants lying on an \emph{uncovered} optimum. Show ESA
-fails there, matching Thm.~\ref{thm:lower}. This experiment is what makes the paper credible: it
-demonstrates the method's own limit.}
+\paragraph{Q2: The predicted failure boundary (load-bearing).} Bandit with the reference covering only
+part of the space. When the divergence arm is \emph{covered}, ESA recovers the optimum $100\%$ of
+seeds; when it is \emph{uncovered} (sycophants lie on an unaudited optimum), ESA recovers $0\%$, as
+does the mean --- matching Thm.~\ref{thm:lower}. At $100\%$ homogeneous bias, pure trust-auditing also
+fails ($0\%$); only the absolute-distrust fail-safe recovers, and only under coverage.
 
-\paragraph{Q3: Audit economy.} Active vs.\ fixed-rate auditing. [illustrative, synthetic]
-In a $K{=}10$ bandit with an 80\% sycophantic majority, fixed-rate ($p_{\mathrm{ref}}=0.1$) spent
-$111,483,1959,8024$ audits at $T=10^3,5{\cdot}10^3,2{\cdot}10^4,8{\cdot}10^4$; active auditing spent
-$15$--$20$ at every horizon; both recovered $\astar$. \run{re-run at your parameters, plot
-audits-vs-$T$.}
+\paragraph{Q3: Audit economy.} In a $K{=}10$ bandit with an 80\% sycophantic majority, fixed-rate
+($p_{\mathrm{ref}}=0.1$) auditing grows as $\Theta(p_{\mathrm{ref}}T)$ ($\approx 8000$ audits at
+$T=8{\cdot}10^4$) while active auditing stays flat at $\approx 32$ across $T\in[10^3,8{\cdot}10^4]$;
+both recover $\astar$ --- the horizon-independence of Thm.~\ref{thm:audit}.
 
-\paragraph{Q4: Bloc partition.} [illustrative, synthetic] With a 60\% colluding majority sharing
-bias on $3/12$ actions, oracle-less covariance clustering recovered the partition at $\approx 0.9$
-accuracy (within-bloc corr.\ $0.84$--$0.95$, cross-bloc $0.12$); both clusters were internally
-coherent, so reports alone did not label them. \run{re-run; add the covariance-shift
-re-audit trigger on your Testbed 3 strategic-adversary and contagion runs.}
+\paragraph{Q4: Bloc partition.} On the \emph{synthetic} bandit, oracle-less covariance clustering
+recovers a colluding-majority partition at $0.7$--$1.0$ accuracy (and cannot label which bloc is
+honest, per Cor.~\ref{cor:internal}); a drift alarm fires within 25 steps of a bloc forming.
+\emph{Negative transfer to real graders:} on the LLM panel the partition does \emph{not} separate
+(accuracy $0.70$, no clean split) because a one-model-per-type panel has no within-bloc diversity to
+detect; we report this and keep Q4 synthetic-only.
 
-\paragraph{Q5: RLVR instantiation and $\Delta_{\mathrm{drift}}$.} \run{Instantiate $z$ with a real
-verifier on a verifiable domain (math/code); learn trust on $\V$, transfer to a non-verifiable split;
-MEASURE $\Delta_{\mathrm{drift}}$ on held-out labeled prompts. This is the experiment that turns the
-core assumption into evidence.}
+\paragraph{Q5: RLVR instantiation and the transfer boundary (real graders).} Verifier $z=$ GSM8K
+exact-match on $\V$; $\N=$ TruthfulQA; panel of 2 honest (Qwen2.5-32B) + 8 sycophant (Qwen2.5-7B)
+graders; Qwen2.5-32B as an independent gold on $\N$; $N=100$, $95\%$ bootstrap CIs.
+Trust learned on $\V$ transfers to $\N$: ESA recovers $80\%\,[72,87]$ where the sycophantic majority
+captures the naive mean at $1\%$. Three findings sharpen the picture. \emph{(a) Coupling is
+structural:} a submitted answer is itself an expressed belief, so a dispositional sycophant is
+detectable even on $\V$ --- via grading \emph{leniency} (it scores a wrong math answer $6.3/10$ vs.\
+honest $1.9$), which the exact verifier punishes. \emph{(b) The strategic adversary:} a sycophant
+\emph{instructed to grade math strictly} (wrong$\to 0.08$) is honest-on-$\V$/biased-on-$\N$ --- the
+Thm.~\ref{thm:lower} adversary with $\Cov=\V$ --- and ESA fails ($0\%$), concentrating frozen trust
+mass $1.0$ onto it while the fail-safe cannot fire (it passes every audit). \emph{(c) Cardinal
+elicitation is required:} re-running trust on preferences alone inverts the mechanism, $80\%\,[72,87]
+\!\to\!0\%\,[0,0]$ (App.~\ref{app:proofs}, Rem.\ on modality).
 
-\paragraph{Q6: Baselines and sensitivity.} \run{Add WDPO, KLDPO, RRM as baselines (not just
-mean/median/Dawid--Skene/GAIL). Report the sycophant-ratio sweep with the theoretical tipping point
-overlaid, and the noise/$\eta$ sensitivity.}
+\paragraph{Q6: Baselines on the real panel.} On the same real-grader panel (single 8/10 ratio), every
+majority-trusting aggregator collapses: Mean $1\%$, Median/GAIL/Wass-DRO/RRM $0\%$, Dawid--Skene $1\%$;
+KL-DRO reaches $38\%\,[29,48]$ --- its entropic risk exp-tilts toward low scores, discounting the
+sycophant's lenient inflation, i.e.\ it exploits the same \emph{cardinal} channel as ESA but without a
+reference --- while ESA recovers $80\%\,[72,87]$. A composition sweep (real graders) reproduces the
+tipping point: aggregators hold until the sycophant fraction reaches $\approx 0.5$ and collapse
+thereafter; ESA holds down to a single honest grader.
 
 % =====================================================================
 \section{Limitations}\label{sec:limits}
 Source auditing cannot recover what the reference does not cover (Thm.~\ref{thm:lower}); with an
-uncovered divergence region, ESA fails safe rather than correctly. Aggregation itself flattens
-behavior: ESA changes \emph{whose} preferences dominate, not the tendency of optimization to collapse
-onto a mode \citep[cf.][]{gao2023overopt}. Transfer to non-verifiable tasks rests on bounded reliability
-drift, which we measure but do not guarantee. Verifiers are imperfect and gameable
-\citep{skalse2022reward}. The formal results are for the bandit/contextual case; MDP results are
-empirical.
+uncovered divergence region, ESA fails safe rather than correctly.
+
+\paragraph{The defense is narrower than an audit suggests.} It holds against bias that is a
+\emph{training artifact} --- dispositional sycophancy, whose leniency is verifier-visible and whose
+cross-region coupling is therefore structural --- but not against an adversary \emph{strategic about
+the audit boundary}. Against the latter no audit-based \emph{or} report-based rule can help
+(Thm.~\ref{thm:lower} + Cor.~\ref{cor:internal}), and the failure is worse than inaction: because the
+adversary is the \emph{best} grader on the audited region, ESA concentrates trust mass $1.0$ onto it
+and the absolute-distrust fail-safe never fires (it passes every audit). In RLVR the coverage set is
+\emph{public} (everyone knows math and code are checkable), so this adversary is the realistic
+long-run case, not an exotic one --- and one cannot randomize or hide the audit region to defeat it.
+
+\paragraph{Cardinal elicitation is a scope condition.} Every result assumes cardinal reports and a
+cardinal reference; the dominance margin can go negative under purely ordinal (preference) elicitation,
+and the mechanism then inverts (measured: trust mass $1.0$ on the sycophant, recovery $80\%\!\to\!0\%$).
+This scopes ESA away from the modality of RLHF/DPO/WDPO/KLDPO and, conversely, argues for eliciting
+absolute scores.
+
+\paragraph{Other limits.} Aggregation flattens behavior: ESA changes \emph{whose} preferences dominate,
+not the tendency of optimization to collapse onto a mode \citep[cf.][]{gao2023overopt}. Recovery is
+bounded by the honest minority's own competence on the target region (empirically $\beta_\ast>0$: an
+$80\%$ ceiling set by the honest graders' TruthfulQA accuracy). Transfer rests on bounded reliability
+drift, which we measure but do not guarantee; verifiers are imperfect and gameable
+\citep{skalse2022reward}. Formal results are bandit/contextual; MDP results are empirical.
 
 % =====================================================================
 \section{Conclusion}
@@ -327,7 +374,9 @@ Objective decoupling is structural, not incidental, and gold-standard consensus 
 bias is majority-held. Recovery by source auditing is possible exactly when the reference covers the
 divergence region, and no cleverness on the reports alone removes that requirement. Verifiable
 subtasks supply the reference for free where a ground truth exists and reduce the rest to a
-measurable assumption. \run{one-sentence empirical takeaway.}
+measurable assumption. On real LLM graders this recovers $80\%$ of ground truth from a sycophantic
+majority that defeats every consensus baseline --- but only for training-artifact bias, on cardinal
+feedback, and only while the audit boundary is not itself the adversary's target.
 
 \bibliographystyle{plainnat}
 % \bibliography{yourbib}   % use your existing .bib + the entries added in

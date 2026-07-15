@@ -1,4 +1,4 @@
-% =====================================================================
+    % =====================================================================
 % APPENDIX: FULL PROOFS  (plugs into aaai27_esa_skeleton.tex \appendix)
 % Compiles standalone for checking. Labels match the skeleton:
 %   thm:lower, cor:internal, lem:bridge, thm:upper, thm:audit,
@@ -246,7 +246,10 @@ $\mathrm{UCB}(a)\ge\max_{a'}\mathrm{LCB}(a')$ at some round). Under
 Assumption~\ref{ass:coverage}, the active rule (audit iff the region is
 unresolved \emph{and} competitive; resolve after $p$ consecutive audits with
 $|\hat r(a)-z|\le\varrho$, where $2(\beta_\ast+\varepsilon)+\nfl<\varrho<
-\gamma-\nfl$) recovers $\astar$ using
+\gamma-\nfl$; the lower factor $2$ is a safety margin ensuring the concentrated
+aggregate---whose deviation has mean $\beta_\ast+\varepsilon+\nfl$ per Step~2 of the
+proof---clears $\varrho$ with room $\Theta(\gamma)$, and the window is nonempty only
+when $\gamma>2(\beta_\ast+\varepsilon)+2\nfl$) recovers $\astar$ using
 \[
 \E[\#\text{audits}]\ \le\ K_{\mathrm{eff}}\Big(n_\gamma+p+
 O\big(\gamma^{-2}L^2\log(K_{\mathrm{eff}}p/\delta)\big)\Big)
@@ -375,8 +378,9 @@ loading $f_{\min}$, bloc sizes $\ge s_{\min}$. If the sample size satisfies
 $n\ \ge\ C\,\frac{\sigma^4 M\log M}{\lambda_r^{2}}$ and the eigengap obeys
 $\lambda_r\ \ge\ 2\|\hat\Sigma_n-\Sigma\|_{\mathrm{op}}$, then spectral
 clustering on the top-$r$ eigenvectors of the residual sample covariance
-$\hat\Sigma_n$ recovers the bloc partition exactly, with probability
-$1-M^{-c}$. Consequently the active rule needs only
+$\hat\Sigma_n$ recovers the bloc partition \emph{almost exactly} (a vanishing
+misclassified fraction, and exactly under an additional entrywise/incoherence
+condition; see proof), with probability $1-M^{-c}$. Consequently the active rule needs only
 $O\!\big(r\,\gamma^{-2}L^2\log(r/\delta)\big)$ audits (one representative per
 bloc), replacing the $K_{\mathrm{eff}}$ factor of Theorem~\ref{thm:audit}
 whenever the bias matrix is bloc-coherent (rank $r$).
@@ -401,10 +405,17 @@ $E_n\le\lambda_r/2$.
 \emph{Davis--Kahan.} With eigengap between the $r$-th and $(r{+}1)$-th
 eigenvalues of $\Sigma$ equal to $\lambda_r$, the $\sin\Theta$ theorem gives
 $\|\hat U-U O\|_{\mathrm{F}}\le \frac{2\sqrt{2r}\,E_n}{\lambda_r}$ for some
-rotation $O$. If this is $<\Delta_U\sqrt{s_{\min}}/2$, at most a vanishing
-fraction of rows can cross the midpoint between bloc centroids, and $(r)$-means
-(or the median-threshold rule for $r=2$) assigns every evaluator to its bloc:
-exact recovery. The sample condition enforces this.
+rotation $O$. Since $\|\hat U-UO\|_{\mathrm F}^2\ge k\,\Delta_U^2$ whenever $k$ rows
+are displaced past the inter-centroid midpoint $\Delta_U$, the bound forces at most
+$k\le 8rE_n^2/(\lambda_r^2\Delta_U^2)$ misclassified rows: \emph{almost-exact}
+recovery, with a vanishing misclassified fraction as $n\!\to\!\infty$.
+\emph{Exact} recovery (zero misclassified rows) requires a row-wise
+$\ell_{2,\infty}$ (entrywise eigenvector) bound in place of the Frobenius one --- a
+leave-one-out / entrywise perturbation argument (Abbe et al., 2020, entrywise
+eigenvector analysis) --- which holds under the same sample condition with an
+extra incoherence assumption on $F$; we state almost-exact recovery here as it is
+what the experiments exhibit ($0.7$--$1.0$ partition accuracy, not exact) and defer
+the entrywise strengthening.
 
 \emph{Audit consequence.} A bloc's bias pattern is shared across its members and
 across the regions it touches (rank-$r$ coherence), so one audited representative
@@ -455,21 +466,39 @@ Theorem~\ref{thm:lower} with $\Cov=\V$; the $P_0$/$P_1$ observation laws are
 identical (the verifier is consulted only on $\V$, where the populations agree),
 so the $\frac{\Delta}{2}T$ bound holds for any algorithm, and
 $\Delta_{\mathrm{drift}}\ge 2\Delta$ is unbounded as $\Delta$ grows.
-\emph{Empirical anchors.} The measured $\Delta$-threshold
-$\in(0.61,0.65)$ brackets the prediction
-$\Delta_{\mathrm{drift}}^{\ast}=\Delta_{\min}^{\N}/2-\beta_\ast^{\V}-\varepsilon$
-of the display; the harsh-on-$\V$ grader instantiates the converse.
+\emph{Empirical anchors, and a mechanism caveat.} Two points qualify the display
+against the real-grader panel (honest Qwen2.5-32B, sycophant Qwen2.5-7B; GSM8K
+verifier on $\V$, TruthfulQA on $\N$; Qwen2.5-32B gold; $N=100$, bootstrap $95\%$
+CIs). (i) \emph{Scale.} The coupling sweep's threshold lives on a preference-agreement
+scale ($0$--$1$); on the score-\emph{margin} scale of $\Delta_{\mathrm{drift}}$ the
+prediction is $\Delta_{\mathrm{drift}}^{\ast}=\Delta_{\min}^{\N}-\beta_\ast^{\V}
+-\varepsilon\approx 10-2.1-0=7.9$ (measured $\beta_\ast^{\V}$ on \emph{shielded}
+honest $\V$-grading; $\varepsilon\!\approx\!0$ since $W_{\mathrm{bias}}\!\to\!0$),
+and the certified-grader drift straddles it only at order one. (ii) \emph{Operative
+signal.} The mechanism does not key on the drift $|b^{\N}-b^{\V}|$ but on the
+cardinal $\V$-calibration loss of Assumption~\ref{ass:coverage}(ii): the lenient
+sycophant, with the \emph{larger} drift, is caught ($\V$-loss $0.64$) while the harsh
+sycophant, with larger drift still, is not ($\V$-loss $0.04$, below even the honest
+panel's $0.21$). Thus $\Delta_{\mathrm{drift}}$ upper-bounds the transferable error
+but the dominance margin $\gamma$ is what governs detection; the transfer condition is
+best read through $\gamma$. The harsh-on-$\V$ grader instantiates the converse (frozen
+trust mass $1.0$ on the adversary, $\N$-recovery $0\%$ vs.\ ESA $80\%$ $[72,87]$ on the
+lenient panel).
 \end{proof}
 
 \begin{remark}[Modality]\label{rem:cardinal}
 Every result above is stated for \emph{cardinal} reports and a cardinal
 reference; the losses $|y_m-z|$ compare levels, not orders. Under purely ordinal
 elicitation the dominance margin of Assumption~\ref{ass:coverage}(ii) can be
-negative (a lenient-but-correctly-ranking evaluator has \emph{lower} ordinal loss
-than a truthful one), and the mechanism can invert, as observed empirically
-(trust mass $1.0$ on the sycophant under preference elicitation). Cardinality is
-therefore a requirement of the method and, we argue, a design recommendation for
-feedback collection.
+negative: a lenient-but-correctly-ranking evaluator has \emph{lower} ordinal loss
+than a truthful one (in our panel the sycophant's V-preference reliability $0.98$
+exceeds the honest panel's $0.80$; it loses only on absolute calibration, scoring a
+wrong answer $6.3$ vs.\ $1.9$). Re-running trust learning on preferences alone
+inverts the mechanism: the frozen trust mass moves entirely onto the sycophants and
+$\N$-recovery collapses from $80\%\,[72,87]$ (cardinal) to $0\%\,[0,0]$ (ordinal;
+$95\%$ bootstrap CIs, $N=100$). Cardinality is therefore a requirement of the method
+and, we argue, a design recommendation for feedback collection: elicit absolute
+scores, since ranking hides the dispositional bias that source-auditing must detect.
 \end{remark}
 
 \end{document}
