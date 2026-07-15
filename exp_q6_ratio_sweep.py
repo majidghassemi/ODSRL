@@ -89,8 +89,6 @@ plt.plot(fracs, curves["ESA"], "o-", color="#6C3483", lw=3, label="ESA (ours)")
 plt.axhline(0.5, color="grey", ls=":", lw=1)
 plt.xlabel("sycophant fraction of the grader panel (M=10)")
 plt.ylabel("N-recovery (TruthfulQA)")
-plt.title("Q6 REAL-panel ratio sweep: majority-trusting aggregators tip; ESA holds\n"
-          f"cached real graders (honest-32B / syco-7B), N={len(N)}")
 plt.ylim(-0.05, 1.05); plt.grid(alpha=0.25); plt.legend(fontsize=8, ncol=2)
 plt.tight_layout(); plt.savefig("paper/figures/q6_ratio_sweep_real.png", dpi=200)
 

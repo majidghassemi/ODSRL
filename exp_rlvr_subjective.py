@@ -432,10 +432,6 @@ def main():
     plt.axhline(0.5, color="grey", ls=":", lw=1)
     plt.xlabel("measured cross-region drift  Δ  (per-grader reliability_V − reliability_N)")
     plt.ylabel("recovery on subjective N (TruthfulQA)")
-    plt.title(f"Q5: recovery vs MEASURED drift Δ   (honest {hm.split('/')[-1]} + "
-              f"syco {sm.split('/')[-1]}, gold {STRONG_MODEL.split('/')[-1]})\n"
-              f"N={len(N)}, V={args.n_v}, greedy; Δ swept via the coupling instrument "
-              "(not a natural-population estimate)")
     plt.ylim(-0.05, 1.05); plt.grid(alpha=0.25); plt.legend(fontsize=8)
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.tight_layout(); plt.savefig(fig_path, dpi=200)

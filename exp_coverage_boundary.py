@@ -45,12 +45,11 @@ if __name__ == "__main__":
     for data, lab, col, ls in [
         (esa_on, "ESA (divergence covered)", "#6C3483", "-"),
         (esa_off, "ESA (divergence UNCOVERED)", "#C0392B", "--"),
-        (base, "Mean (Dogma-4)", "#D35400", ":")]:
+        (base, "Mean (Standard RL)", "#D35400", ":")]:
         m, sd = data.mean(0), data.std(0)
         plt.plot(x, m, col, ls=ls, lw=2.5, label=lab)
         plt.fill_between(x, m - sd, m + sd, color=col, alpha=0.15)
     plt.xlabel("Steps"); plt.ylabel("Cumulative latent regret")
-    plt.title("Coverage boundary: recovery iff the divergence region is audited")
     plt.legend(); plt.grid(alpha=0.25); plt.tight_layout()
     os.makedirs("paper/figures", exist_ok=True)
     plt.savefig("paper/figures/q2_coverage_boundary.png", dpi=200)

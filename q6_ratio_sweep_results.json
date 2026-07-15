@@ -106,9 +106,9 @@
     ]
   },
   "provenance": {
-    "git_commit": "eee4cfc",
+    "git_commit": "2258cff",
     "git_dirty": true,
-    "date_utc": "2026-07-15T17:29:54.887894+00:00",
+    "date_utc": "2026-07-15T19:37:41.923097+00:00",
     "honest_model": "Qwen/Qwen2.5-32B-Instruct",
     "syco_model": "Qwen/Qwen2.5-7B-Instruct",
     "gold_model": "Qwen/Qwen2.5-32B-Instruct",

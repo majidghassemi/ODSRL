@@ -320,9 +320,6 @@ def main():
     plt.axhline(0.5, color="grey", ls=":", lw=1)
     plt.xlabel("cross-region coupling  (fraction of sycophancy exposed on V)")
     plt.ylabel("recovery on non-verifiable region N")
-    plt.title("Q5 REAL: trust transfers V→N iff evaluator reliability couples\n"
-              f"{MODEL_ID.split('/')[-1]} panel (2 honest + 8 sycophant), "
-              "GSM8K verifier, Δ = MEASURED drift")
     plt.ylim(-0.05, 1.05); plt.grid(alpha=0.25); plt.legend()
     os.makedirs(os.path.dirname(FIG_PATH), exist_ok=True)
     plt.tight_layout(); plt.savefig(FIG_PATH, dpi=200)

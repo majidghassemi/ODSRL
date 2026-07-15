@@ -143,7 +143,6 @@ if __name__ == "__main__":
         ax[0].fill_between(x, m - sd, m + sd, color=color, alpha=0.18)
     ax[0].axhline(0, color='grey', ls=':', lw=1)
     ax[0].set_xlabel("environment step"); ax[0].set_ylabel("latent (true) reward")
-    ax[0].set_title(f"Hopper latent reward under 80% lazy majority\n(mean ± std over {args.seeds} seeds)")
     ax[0].legend(loc='upper left'); ax[0].grid(alpha=0.2)
 
     # right: trust-in-liars mean ± std band + adversary bias
@@ -155,7 +154,6 @@ if __name__ == "__main__":
     ax[1].fill_between(xb, mb - sdb, mb + sdb, color='#2E86C1', alpha=0.12)
     ax[1].axhline(0.05, color='grey', ls=':', lw=1, label='target trust')
     ax[1].set_xlabel("environment step"); ax[1].set_ylabel("weight / magnitude")
-    ax[1].set_title(f"Epistemic source judgment (strategic Nash)\n(mean ± std over {args.seeds} seeds)")
     ax[1].legend(loc='center right'); ax[1].grid(alpha=0.2)
 
     plt.tight_layout()

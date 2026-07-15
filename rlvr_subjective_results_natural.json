@@ -184,9 +184,25 @@
   ],
   "honest_relV": 0.8,
   "syco_relV": 0.9833333333333333,
-  "natural": true,
+  "honest_shielded_on_V": true,
+  "belief_injected_on_V_syco": false,
+  "harsh_syco": false,
   "empirical_delta_threshold": {
     "passes_up_to": 0.9833333333333333,
     "fails_from": null
+  },
+  "provenance": {
+    "git_commit": "2258cff",
+    "git_dirty": true,
+    "date_utc": "2026-07-15T19:44:20.977151+00:00",
+    "honest_model": "Qwen/Qwen2.5-32B-Instruct",
+    "syco_model": "Qwen/Qwen2.5-32B-Instruct",
+    "gold_model": "Qwen/Qwen2.5-32B-Instruct",
+    "temperature": 0.0,
+    "decoding": "greedy",
+    "n_v": 120,
+    "n_n": 100,
+    "inject_belief_on_V": false,
+    "harsh_syco": false
   }
 }

@@ -57,8 +57,6 @@ if __name__ == "__main__":
     band(ax, ratios,
          lambda r, s: esa_regret(r, 0.5, 0.1, 0.5, s),
          [f"{int(r*100)}% biased" for r in ratios], colors)
-    ax.set_title("A. Robustness to fraction of biased evaluators\n"
-                 "v2 ESA (active audit + absolute-distrust fail-safe), covered")
     fig.tight_layout(); fig.savefig(f"{OUT}/q8a_ablation_bias_ratio.png", dpi=200)
     for r in ratios:
         R = np.stack([esa_regret(r, 0.5, 0.1, 0.5, s) for s in range(SEEDS)])
@@ -71,7 +69,6 @@ if __name__ == "__main__":
     band(ax, etas,
          lambda e, s: esa_regret(0.8, e, 0.1, None, s),
          [rf"$\eta={e}$" for e in etas], ["#F39C12", "#6C3483", "#16A085"])
-    ax.set_title(r"B. Sensitivity to trust update rate $\eta$ (80% biased, covered)")
     fig.tight_layout(); fig.savefig(f"{OUT}/q8b_ablation_eta.png", dpi=200)
     for e in etas:
         R = np.stack([esa_regret(0.8, e, 0.1, None, s) for s in range(SEEDS)])
@@ -84,7 +81,6 @@ if __name__ == "__main__":
     band(ax, noises,
          lambda sg, s: esa_regret(0.8, 0.5, sg, None, s),
          [rf"ref $\sigma={sg}$" for sg in noises], ["#2ECC71", "#F1C40F", "#E67E22", "#E74C3C"])
-    ax.set_title("C. Robustness to imperfect reference / spot-check noise\n(80% biased, covered)")
     fig.tight_layout(); fig.savefig(f"{OUT}/q8c_ablation_ref_noise.png", dpi=200)
     for sg in noises:
         R = np.stack([esa_regret(0.8, 0.5, sg, None, s) for s in range(SEEDS)])

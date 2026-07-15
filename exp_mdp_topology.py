@@ -128,8 +128,6 @@ if __name__ == "__main__":
     plt.plot(roll(stats["trust_healthy"]), color="#6C3483", lw=2.5,
              label="avg trust in healthy nodes")
     plt.xlabel("environment step"); plt.ylabel("trust weight / infection fraction")
-    plt.title("v2 dynamic quarantine: ESA (per-region trust) isolates the\n"
-              "spreading sycophancy contagion on a scale-free evaluator network")
     plt.legend(loc="upper left"); plt.grid(alpha=0.25)
     import os; os.makedirs("paper/figures", exist_ok=True)
     plt.tight_layout(); plt.savefig("paper/figures/q9a_topology_dynamics.png", dpi=200)
@@ -146,7 +144,6 @@ if __name__ == "__main__":
     px, py = pos[wrap.patient_zero]
     plt.text(px, py + 0.09, "Patient Zero", ha="center", fontweight="bold",
              color="#C0392B", fontsize=13)
-    plt.title(f"Final trust state (T={args.timesteps})  green=trusted, red=quarantined")
     plt.axis("off"); plt.tight_layout()
     plt.savefig("paper/figures/q9b_topology_graph.png", dpi=200)
     print("saved paper/figures/q9b_topology_graph.png")

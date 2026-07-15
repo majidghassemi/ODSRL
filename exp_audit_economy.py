@@ -37,7 +37,6 @@ if __name__ == "__main__":
     plt.errorbar(x, fix_m, yerr=fix_s, fmt="s--", color="#D35400", lw=2.5,
                  label="Fixed-rate $p_{ref}=0.1$: linear in $T$")
     plt.xlabel("Horizon $T$"); plt.ylabel("Total reference queries (audits)")
-    plt.title("Audit budget vs horizon (both recover the optimum)")
     plt.legend(); plt.grid(alpha=0.25); plt.tight_layout()
     os.makedirs("paper/figures", exist_ok=True)
     plt.savefig("paper/figures/q3_audit_economy.png", dpi=200)

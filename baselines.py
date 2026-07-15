@@ -27,7 +27,7 @@ import numpy as np
 
 
 class Mean:
-    name = "Mean (Dogma-4)"
+    name = "Mean (Standard RL)"
     def process(self, y): return float(np.mean(y))
 
 

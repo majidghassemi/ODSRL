@@ -11,17 +11,17 @@
 
 ## 📄 Abstract
 
-Contemporary AI alignment strategies rely on a fragile premise: that human feedback, while noisy, remains a fundamentally truthful signal. In this paper, we identify this assumption as **Dogma 4** of Reinforcement Learning (RL). We demonstrate that while this dogma holds in static environments, it fails in social settings where evaluators may be sycophantic, lazy, or adversarial.
+Contemporary AI alignment strategies rely on a fragile premise: that human feedback, while noisy, remains a fundamentally truthful signal. In this paper, we identify this premise as the **Trusted-Feedback Assumption** — the feedback *source* reports the latent objective up to zero-mean noise. We demonstrate that while it holds in static environments, it fails in social settings where evaluators may be sycophantic, lazy, or adversarial.
 
-We prove that under Dogma 4, standard RL agents suffer from **Objective Decoupling**, a structural failure mode where the agent's learned objective permanently separates from the latent ground truth, guaranteeing convergence to misalignment. To resolve this, we propose **Epistemic Source Alignment (ESA)**. Unlike standard robust methods that rely on statistical consensus (trusting the majority), ESA utilizes sparse safety axioms to judge the *source* of the feedback rather than the signal itself. We prove that this mechanism guarantees convergence to the true objective, even when **80% of evaluators are biased**.
+We prove that under this assumption, standard RL agents suffer from **Objective Decoupling**, a structural failure mode where the agent's learned objective permanently separates from the latent ground truth. To resolve this, we propose **Epistemic Source Alignment (ESA)**. Unlike robust methods that rely on statistical consensus (trusting the majority), ESA audits the *source* of the feedback against a sparse trusted reference. Our main result is a **coverage characterization**: recovery is possible *if and only if* the reference covers the region where bias could flip the decision.
 
 ---
 
-## 🚨 The Core Problem: Dogma 4
+## 🚨 The Core Problem: The Trusted-Feedback Assumption
 
-Existing RL frameworks (including RLHF) operate under three well-known dogmas (Abel, 2024). We identify a fourth implicit assumption that causes catastrophic failure in social alignment:
+RLHF and related frameworks operate under an implicit assumption, orthogonal to the three dogmas of Abel (2024), that causes catastrophic failure in social alignment:
 
-> **Dogma 4 (The Feedback Signal):** The feedback signal provided to the agent is an exogenous, immutable ground truth provided by the environment, such that $R_{obs}(s,a) \equiv R^*(s,a)$.
+> **The Trusted-Feedback Assumption:** The feedback signal is an exogenous, faithful view of ground truth, such that $R_{obs}(s,a) \equiv R^*(s,a)$ up to zero-mean noise.
 
 In **Social MDPs**, this is false. Feedback is not an objective property of physics; it is a communication channel susceptible to:
 * **Sycophancy:** Evaluators rewarding actions that confirm the agent's priors.

@@ -86,8 +86,6 @@ if __name__ == "__main__":
         ax.text(b.get_x() + b.get_width() / 2, b.get_height(),
                 f"{b.get_height():.2f}", ha="center", va="bottom", fontsize=13, fontweight="bold")
     ax.set_ylabel("latent (true) reward per step, clean eval")
-    ax.set_title("Robustness vs imitation: IRL/GAIL reproduces the biased objective,\n"
-                 "ESA recovers the latent one (Hopper, 80% lazy majority)")
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     import os; os.makedirs("paper/figures", exist_ok=True)

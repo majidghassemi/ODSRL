@@ -13,7 +13,7 @@ region keyed by grid cell, and show WHY per-region matters:
   lured to the proxy goal. PER-REGION trust localizes the audit: at the Candy cell
   the liars are down-weighted and the agent recovers the true goal.
 
-Baselines: Mean (Dogma-4), Median (robust consensus), Global-ESA (continuous-audit
+Baselines: Mean (Standard RL), Median (robust consensus), Global-ESA (continuous-audit
 but one shared weight vector), Region-ESA (ours). Metric: P(visit Candy) per episode.
 
 Runs with numpy only -- no MuJoCo. See exp_mdp_hopper.py for the continuous testbed.
@@ -170,8 +170,6 @@ if __name__ == "__main__":
         plt.fill_between(x, m - sd, m + sd, color=colors[k], alpha=0.12)
     plt.xlabel("Episodes")
     plt.ylabel("P(visit Candy / proxy goal)")
-    plt.title("Q1 (MDP): Sycophant Trap — per-region trust escapes, global trust does not\n"
-              f"10x10 grid, 80% lazy sycophants, {SEEDS} seeds")
     plt.ylim(-0.05, 1.05)
     plt.legend(loc='center right')
     plt.grid(alpha=0.2)

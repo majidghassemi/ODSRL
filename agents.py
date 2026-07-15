@@ -26,7 +26,7 @@ class BaseAgent:
         new_q = old_q + self.alpha * (reward + self.gamma * next_max_q - old_q)
         self.q_table[(state, action)] = new_q
 
-class Dogma4Agent(BaseAgent):
+class StandardRLAgent(BaseAgent):
     """Standard RL: Averages all social feedback blindly."""
     def process_feedback(self, feedbacks, internal_signal=None):
         return np.mean(feedbacks)
@@ -76,7 +76,7 @@ class DawidSkeneAgent(BaseAgent):
             self.trust_weights = new_trust / np.sum(new_trust)
 
 class InternalFeedbackAgent(BaseAgent):
-    """Dogma-4 Compliant: Filters feedback based on internal axioms."""
+    """Standard-RL compliant: filters feedback based on internal axioms."""
     def __init__(self, actions, num_evaluators, alpha=0.1, gamma=0.9, epsilon=0.1):
         super().__init__(actions, alpha, gamma, epsilon)
         self.trust_weights = np.ones(num_evaluators) / num_evaluators

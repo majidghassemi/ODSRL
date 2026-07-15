@@ -54,7 +54,7 @@ print("=== Q6 on the REAL grader panel (2 honest-32B + 8 syco-7B, TruthfulQA N) 
 print(f"panel: 8/10 sycophantic majority; N={len(N)} items\n")
 print(f"{'method':28s} N-recovery")
 recs = {}
-for name, b in [("Mean (Dogma-4)", Mean()), ("Median", Median()),
+for name, b in [("Mean (Standard RL)", Mean()), ("Median", Median()),
                 ("Dawid-Skene", DawidSkene(10)), ("GAIL (mimic majority)", GAILProxy()),
                 ("KL-DRO (KLDPO-analogue)", RobustDRO_KL()),
                 ("Wass-DRO (WDPO-analogue)", RobustDRO_Wass()),

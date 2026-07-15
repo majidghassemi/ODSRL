@@ -49,7 +49,6 @@ if __name__ == "__main__":
     plt.axvline(TIP, color="grey", ls=":", lw=2, label=f"theoretical tip ({TIP:.2f})")
     plt.axvline(0.5, color="black", ls=":", lw=1, alpha=0.5, label="majority (0.5)")
     plt.xlabel("sycophant ratio"); plt.ylabel(f"cumulative latent regret at T={STEPS}")
-    plt.title("Consensus/robust baselines collapse past the tipping point; ESA does not")
     plt.legend(ncol=2, fontsize=9); plt.grid(alpha=0.25); plt.tight_layout()
     os.makedirs("paper/figures", exist_ok=True)
     plt.savefig("paper/figures/q6_baselines_sweep.png", dpi=200)

@@ -74,7 +74,7 @@ def draw(ax, res, labels, title):
         ax.plot(x, m, color=COL[key], lw=lw, ls=ls, label=labels[key])
         ax.fill_between(x, m - sd, m + sd, color=COL[key], alpha=0.15)
     ax.set_xlabel("step"); ax.set_ylabel("cumulative latent regret")
-    ax.set_title(title); ax.legend(loc='upper left'); ax.grid(alpha=0.2)
+    ax.legend(loc='upper left'); ax.grid(alpha=0.2)
 
 
 if __name__ == "__main__":
@@ -110,8 +110,6 @@ if __name__ == "__main__":
          {'mean': 'Standard UCB (Mean)', 'dawid': 'Dawid-Skene',
           'esa': 'ESA, no fail-safe', 'esa_fs': 'ESA + absolute-distrust fail-safe'},
          "(B) 100% homogeneous bias, covered\nno honest minority → pure trust fails, fail-safe recovers")
-    plt.suptitle("Adversarial-bandit regret: v1 comparison corrected for the "
-                 "coverage-boundary theory (v2)", fontsize=12)
     plt.tight_layout()
     os.makedirs("paper/figures", exist_ok=True)
     out = "paper/figures/q7_bandit_regret_v2.png"
