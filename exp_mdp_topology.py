@@ -109,7 +109,7 @@ def roll(a, w=300):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--timesteps", type=int, default=40000)
+    ap.add_argument("--timesteps", type=int, default=50000)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 

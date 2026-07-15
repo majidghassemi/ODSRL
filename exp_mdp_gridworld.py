@@ -31,7 +31,7 @@ from esa_mdp import ContextualTrust
 
 # --- config ---
 SEEDS = 15
-EPISODES = 3000
+EPISODES = 50000
 MAX_STEPS = 40
 WINDOW = 75
 P_REF = 0.10          # audit probability (spot-check of the latent reward)
