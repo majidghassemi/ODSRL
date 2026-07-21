@@ -1,0 +1,26 @@
+{
+  "mean": {
+    "final_mean": 0.9799000024795532,
+    "final_std": 0.13998745381832123,
+    "seeds": 100,
+    "episodes": 50000
+  },
+  "median": {
+    "final_mean": 0.9999499320983887,
+    "final_std": 0.0004974932526238263,
+    "seeds": 100,
+    "episodes": 50000
+  },
+  "global_esa": {
+    "final_mean": 0.7599999904632568,
+    "final_std": 0.42696666717529297,
+    "seeds": 100,
+    "episodes": 50000
+  },
+  "region_esa": {
+    "final_mean": 0.00019999999494757503,
+    "final_std": 0.0012083046603947878,
+    "seeds": 100,
+    "episodes": 50000
+  }
+}

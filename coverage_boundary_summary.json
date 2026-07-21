@@ -1,0 +1,9 @@
+{
+  "steps": 5000,
+  "seeds": 20,
+  "recovery": {
+    "esa_covered": 1.0,
+    "esa_uncovered": 0.0,
+    "mean": 0.0
+  }
+}
